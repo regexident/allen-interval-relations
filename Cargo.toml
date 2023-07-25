@@ -19,6 +19,9 @@ repository = "https://github.com/regexident/allen-interval-relations"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+bench = false
+
 [dependencies]
 
 [dev-dependencies]
