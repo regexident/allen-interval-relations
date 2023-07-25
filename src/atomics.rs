@@ -53,6 +53,7 @@ pub struct AtomicRelations {
 }
 
 impl AtomicRelations {
+    #[inline]
     pub fn from_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
     where
         S: RangeBounds<U, Discrete>,
@@ -62,6 +63,7 @@ impl AtomicRelations {
         Self::from_ranges::<S, T, U, Discrete>(s, t)
     }
 
+    #[inline]
     pub fn from_non_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
     where
         S: RangeBounds<U, NonDiscrete>,
@@ -71,6 +73,7 @@ impl AtomicRelations {
         Self::from_ranges::<S, T, U, NonDiscrete>(s, t)
     }
 
+    #[inline]
     pub fn from_ranges<S, T, U, D>(s: S, t: T) -> Option<Self>
     where
         S: RangeBounds<U, D>,

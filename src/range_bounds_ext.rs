@@ -5,6 +5,7 @@ where
     T: PartialEq<T> + PartialOrd<T> + Sized + Bounded,
     D: Discreteness,
 {
+    #[inline]
     fn precedes<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -14,6 +15,7 @@ where
         self_end < other_start
     }
 
+    #[inline]
     fn is_preceded_by<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -21,6 +23,7 @@ where
         other.precedes(self)
     }
 
+    #[inline]
     fn meets<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -30,6 +33,7 @@ where
         self_end == other_start
     }
 
+    #[inline]
     fn is_met_by<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -37,6 +41,7 @@ where
         other.meets(self)
     }
 
+    #[inline]
     fn overlaps<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -47,6 +52,7 @@ where
         (self_end > other_start) && (self_end < other_end)
     }
 
+    #[inline]
     fn is_overlapped_by<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -54,6 +60,7 @@ where
         other.overlaps(self)
     }
 
+    #[inline]
     fn starts<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -65,6 +72,7 @@ where
         (self_start == other_start) && (self_end < other_end)
     }
 
+    #[inline]
     fn is_started_by<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -72,6 +80,7 @@ where
         other.starts(self)
     }
 
+    #[inline]
     fn contains<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -83,6 +92,7 @@ where
         (self_start < other_start) && (self_end > other_end)
     }
 
+    #[inline]
     fn is_contained_by<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -90,6 +100,7 @@ where
         other.contains(self)
     }
 
+    #[inline]
     fn finishes<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -101,6 +112,7 @@ where
         (self_start > other_start) && (self_end == other_end)
     }
 
+    #[inline]
     fn is_finished_by<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,
@@ -108,6 +120,7 @@ where
         other.finishes(self)
     }
 
+    #[inline]
     fn equals<R>(&self, other: &R) -> bool
     where
         R: RangeBoundsExt<T, D> + ?Sized,

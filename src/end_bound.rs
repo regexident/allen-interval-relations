@@ -66,6 +66,7 @@ where
     T: PartialEq<T>,
     D: Discreteness,
 {
+    #[inline]
     fn eq(&self, other: &EndBound<T, D>) -> bool {
         self.bound == other.bound
     }
@@ -76,6 +77,7 @@ where
     T: PartialEq<T> + Bounded,
     D: Discreteness,
 {
+    #[inline]
     fn eq(&self, other: &StartBound<T, D>) -> bool {
         use Bound::*;
 
@@ -93,6 +95,7 @@ where
     T: PartialOrd<T> + Bounded,
     D: Discreteness,
 {
+    #[inline]
     fn partial_cmp(&self, other: &EndBound<T, D>) -> Option<Ordering> {
         use Bound::*;
 
@@ -110,6 +113,7 @@ where
     T: PartialOrd<T> + Bounded,
     D: Discreteness,
 {
+    #[inline]
     fn partial_cmp(&self, other: &StartBound<T, D>) -> Option<Ordering> {
         use Bound::*;
 

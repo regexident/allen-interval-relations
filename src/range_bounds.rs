@@ -15,10 +15,12 @@ impl<T> RangeBounds<T, Discrete> for RangeFrom<T>
 where
     T: Clone,
 {
+    #[inline]
     fn start_bound(&self) -> StartBound<T, Discrete> {
         Bound::Bounded(self.start.clone()).into()
     }
 
+    #[inline]
     fn end_bound(&self) -> EndBound<T, Discrete> {
         Bound::Unbounded.into()
     }
@@ -28,30 +30,36 @@ impl<T> RangeBounds<T, NonDiscrete> for RangeFrom<T>
 where
     T: Clone,
 {
+    #[inline]
     fn start_bound(&self) -> StartBound<T, NonDiscrete> {
         Bound::Bounded(self.start.clone()).into()
     }
 
+    #[inline]
     fn end_bound(&self) -> EndBound<T, NonDiscrete> {
         Bound::Unbounded.into()
     }
 }
 
 impl<T> RangeBounds<T, Discrete> for RangeFull {
+    #[inline]
     fn start_bound(&self) -> StartBound<T, Discrete> {
         Bound::Unbounded.into()
     }
 
+    #[inline]
     fn end_bound(&self) -> EndBound<T, Discrete> {
         Bound::Unbounded.into()
     }
 }
 
 impl<T> RangeBounds<T, NonDiscrete> for RangeFull {
+    #[inline]
     fn start_bound(&self) -> StartBound<T, NonDiscrete> {
         Bound::Unbounded.into()
     }
 
+    #[inline]
     fn end_bound(&self) -> EndBound<T, NonDiscrete> {
         Bound::Unbounded.into()
     }
@@ -61,10 +69,12 @@ impl<T> RangeBounds<T, Discrete> for Range<T>
 where
     T: Clone,
 {
+    #[inline]
     fn start_bound(&self) -> StartBound<T, Discrete> {
         Bound::Bounded(self.start.clone()).into()
     }
 
+    #[inline]
     fn end_bound(&self) -> EndBound<T, Discrete> {
         Bound::Bounded(self.end.clone()).into()
     }
@@ -74,10 +84,12 @@ impl<T> RangeBounds<T, NonDiscrete> for RangeInclusive<T>
 where
     T: Clone,
 {
+    #[inline]
     fn start_bound(&self) -> StartBound<T, NonDiscrete> {
         Bound::Bounded(self.start().clone()).into()
     }
 
+    #[inline]
     fn end_bound(&self) -> EndBound<T, NonDiscrete> {
         Bound::Bounded(self.end().clone()).into()
     }
@@ -87,10 +99,12 @@ impl<T> RangeBounds<T, Discrete> for RangeTo<T>
 where
     T: Clone,
 {
+    #[inline]
     fn start_bound(&self) -> StartBound<T, Discrete> {
         Bound::Unbounded.into()
     }
 
+    #[inline]
     fn end_bound(&self) -> EndBound<T, Discrete> {
         Bound::Bounded(self.end.clone()).into()
     }
@@ -102,10 +116,12 @@ impl<T> RangeBounds<T, NonDiscrete> for RangeToInclusive<T>
 where
     T: Clone,
 {
+    #[inline]
     fn start_bound(&self) -> StartBound<T, NonDiscrete> {
         Bound::Unbounded.into()
     }
 
+    #[inline]
     fn end_bound(&self) -> EndBound<T, NonDiscrete> {
         Bound::Bounded(self.end.clone()).into()
     }

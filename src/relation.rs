@@ -128,6 +128,7 @@ impl PartialOrd for Relation {
 }
 
 impl From<AtomicRelations> for Relation {
+    #[inline]
     fn from(atomics: AtomicRelations) -> Self {
         use Ordering::*;
 
@@ -185,6 +186,7 @@ impl From<AtomicRelations> for Relation {
 }
 
 impl Relation {
+    #[inline]
     pub fn from_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
     where
         S: RangeBounds<U, Discrete>,
@@ -194,6 +196,7 @@ impl Relation {
         Self::from_ranges(s, t)
     }
 
+    #[inline]
     pub fn from_non_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
     where
         S: RangeBounds<U, NonDiscrete>,
@@ -203,6 +206,7 @@ impl Relation {
         Self::from_ranges(s, t)
     }
 
+    #[inline]
     pub fn from_ranges<S, T, U, D>(s: S, t: T) -> Option<Self>
     where
         S: RangeBounds<U, D>,
