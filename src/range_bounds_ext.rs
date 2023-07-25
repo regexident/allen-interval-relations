@@ -1,10 +1,17 @@
 use crate::{Bounded, Discreteness, RangeBounds};
 
+/// Extension methods for allen relations.
 pub trait RangeBoundsExt<T, D>: RangeBounds<T, D>
 where
     T: PartialEq<T> + PartialOrd<T> + Sized + Bounded,
     D: Discreteness,
 {
+    /// Returns `true` iff `self` precedes `other.
+    ///
+    /// ```plain
+    /// self:  ┌────────┐
+    /// other:            └────────┘
+    /// ```
     #[inline]
     fn precedes<R>(&self, other: &R) -> bool
     where
@@ -15,6 +22,12 @@ where
         self_end < other_start
     }
 
+    /// Returns `true` iff `self` is preceded by `other.
+    ///
+    /// ```plain
+    /// self:             ┌────────┐
+    /// other: └────────┘
+    /// ```
     #[inline]
     fn is_preceded_by<R>(&self, other: &R) -> bool
     where
@@ -23,6 +36,12 @@ where
         other.precedes(self)
     }
 
+    /// Returns `true` iff `self` meets `other.
+    ///
+    /// ```plain
+    /// self:  ┌────────┐
+    /// other:          └────────┘
+    /// ```
     #[inline]
     fn meets<R>(&self, other: &R) -> bool
     where
@@ -33,6 +52,12 @@ where
         self_end == other_start
     }
 
+    /// Returns `true` iff `self` is met by `other.
+    ///
+    /// ```plain
+    /// self:           ┌────────┐
+    /// other: └────────┘
+    /// ```
     #[inline]
     fn is_met_by<R>(&self, other: &R) -> bool
     where
@@ -41,6 +66,12 @@ where
         other.meets(self)
     }
 
+    /// Returns `true` iff `self` overlaps `other.
+    ///
+    /// ```plain
+    /// self:  ┌────────┐
+    /// other:      └────────┘
+    /// ```
     #[inline]
     fn overlaps<R>(&self, other: &R) -> bool
     where
@@ -52,6 +83,12 @@ where
         (self_end > other_start) && (self_end < other_end)
     }
 
+    /// Returns `true` iff `self` is overlapped by `other.
+    ///
+    /// ```plain
+    /// self:       ┌────────┐
+    /// other: └────────┘
+    /// ```
     #[inline]
     fn is_overlapped_by<R>(&self, other: &R) -> bool
     where
@@ -60,6 +97,12 @@ where
         other.overlaps(self)
     }
 
+    /// Returns `true` iff `self` starts `other.
+    ///
+    /// ```plain
+    /// self:  ┌────────┐
+    /// other: └────────────────┘
+    /// ```
     #[inline]
     fn starts<R>(&self, other: &R) -> bool
     where
@@ -72,6 +115,12 @@ where
         (self_start == other_start) && (self_end < other_end)
     }
 
+    /// Returns `true` iff `self` is started by `other.
+    ///
+    /// ```plain
+    /// self:  ┌────────────────┐
+    /// other: └────────┘
+    /// ```
     #[inline]
     fn is_started_by<R>(&self, other: &R) -> bool
     where
@@ -80,6 +129,12 @@ where
         other.starts(self)
     }
 
+    /// Returns `true` iff `self` contains `other.
+    ///
+    /// ```plain
+    /// self:  ┌────────────────┐
+    /// other:     └────────┘
+    /// ```
     #[inline]
     fn contains<R>(&self, other: &R) -> bool
     where
@@ -92,6 +147,12 @@ where
         (self_start < other_start) && (self_end > other_end)
     }
 
+    /// Returns `true` iff `self` is contained by `other.
+    ///
+    /// ```plain
+    /// self:      ┌────────┐
+    /// other: └────────────────┘
+    /// ```
     #[inline]
     fn is_contained_by<R>(&self, other: &R) -> bool
     where
@@ -100,6 +161,12 @@ where
         other.contains(self)
     }
 
+    /// Returns `true` iff `self` finishes `other.
+    ///
+    /// ```plain
+    /// self:          ┌────────┐
+    /// other: └────────────────┘
+    /// ```
     #[inline]
     fn finishes<R>(&self, other: &R) -> bool
     where
@@ -112,6 +179,12 @@ where
         (self_start > other_start) && (self_end == other_end)
     }
 
+    /// Returns `true` iff `self` is finished by `other.
+    ///
+    /// ```plain
+    /// self:  ┌────────────────┐
+    /// other:         └────────┘
+    /// ```
     #[inline]
     fn is_finished_by<R>(&self, other: &R) -> bool
     where
@@ -120,6 +193,12 @@ where
         other.finishes(self)
     }
 
+    /// Returns `true` iff `self` equals `other.
+    ///
+    /// ```plain
+    /// self:  ┌────────┐
+    /// other: └────────┘
+    /// ```
     #[inline]
     fn equals<R>(&self, other: &R) -> bool
     where

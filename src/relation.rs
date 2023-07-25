@@ -186,6 +186,8 @@ impl From<AtomicRelations> for Relation {
 }
 
 impl Relation {
+    /// Returns the allen relation between discrete ranges `s` and `t`
+    /// or `None` if any comparisons failures are encountered.
     #[inline]
     pub fn from_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
     where
@@ -196,6 +198,8 @@ impl Relation {
         Self::from_ranges(s, t)
     }
 
+    /// Returns the allen relation between non-discrete ranges `s` and `t`
+    /// or `None` if any comparisons failures are encountered.
     #[inline]
     pub fn from_non_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
     where
@@ -206,6 +210,8 @@ impl Relation {
         Self::from_ranges(s, t)
     }
 
+    /// Returns the allen relation between ranges `s` and `t`
+    /// or `None` if any comparisons failures are encountered.
     #[inline]
     pub fn from_ranges<S, T, U, D>(s: S, t: T) -> Option<Self>
     where
@@ -217,6 +223,7 @@ impl Relation {
         AtomicRelations::from_ranges(s, t).map(Relation::from)
     }
 
+    /// Returns the relation's converse.
     pub fn as_converse(&self) -> Self {
         match self {
             Self::Precedes => Self::IsPrecededBy,

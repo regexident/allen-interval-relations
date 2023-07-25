@@ -6,6 +6,7 @@ use std::{
 
 use crate::{Bound, Bounded, Discreteness, StartBound};
 
+/// An upper endpoint of a range of keys.
 #[derive(Clone, Copy, Debug)]
 pub struct EndBound<T, D> {
     bound: Bound<T>,
@@ -16,18 +17,22 @@ impl<T, D> EndBound<T, D>
 where
     D: Discreteness,
 {
+    /// Creates a finite endpoint bounded at `value`.
     pub fn bounded(value: T) -> Self {
         Self::from(Bound::Bounded(value))
     }
 
+    /// Creates an infinite unbounded endpoint.
     pub fn unbounded() -> Self {
         Self::from(Bound::Unbounded)
     }
 
+    /// Returns the underlying bound.
     pub fn bound(&self) -> &Bound<T> {
         &self.bound
     }
 
+    /// Consumes this endpoint, returning the underlying bound.
     pub fn into_bound(self) -> Bound<T> {
         self.bound
     }

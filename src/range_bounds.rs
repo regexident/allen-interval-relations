@@ -2,12 +2,20 @@ use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToIncl
 
 use crate::{Bound, Discrete, Discreteness, EndBound, NonDiscrete, StartBound};
 
+/// An abstraction over Rust's ranges.
 pub trait RangeBounds<T, D>
 where
     T: Sized,
     D: Discreteness,
 {
+    /// Start index bound.
+    ///
+    /// Returns the start value as a [`Bound<T>`].
     fn start_bound(&self) -> StartBound<T, D>;
+
+    /// End index bound.
+    ///
+    /// Returns the end value as a [`Bound<T>`].
     fn end_bound(&self) -> EndBound<T, D>;
 }
 

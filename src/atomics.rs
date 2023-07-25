@@ -53,6 +53,8 @@ pub struct AtomicRelations {
 }
 
 impl AtomicRelations {
+    /// Returns the atomic allen relations between discrete ranges `s` and `t`
+    /// or `None` if any comparisons failures are encountered.
     #[inline]
     pub fn from_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
     where
@@ -63,6 +65,8 @@ impl AtomicRelations {
         Self::from_ranges::<S, T, U, Discrete>(s, t)
     }
 
+    /// Returns the atomic allen relations between non-discrete ranges `s` and `t`
+    /// or `None` if any comparisons failures are encountered.
     #[inline]
     pub fn from_non_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
     where
@@ -73,6 +77,8 @@ impl AtomicRelations {
         Self::from_ranges::<S, T, U, NonDiscrete>(s, t)
     }
 
+    /// Returns the atomic allen relations between ranges `s` and `t`
+    /// or `None` if any comparisons failures are encountered.
     #[inline]
     pub fn from_ranges<S, T, U, D>(s: S, t: T) -> Option<Self>
     where
@@ -97,18 +103,22 @@ impl AtomicRelations {
         Some(Self { bb, be, eb, ee })
     }
 
+    /// Returns the ordering between `s`'s start bound and `t`'s start bound.
     pub fn bb(&self) -> Ordering {
         self.bb
     }
 
+    /// Returns the ordering between `s`'s start bound and `t`'s end bound.
     pub fn be(&self) -> Ordering {
         self.be
     }
 
+    /// Returns the ordering between `s`'s end bound and `t`'s start bound.
     pub fn eb(&self) -> Ordering {
         self.eb
     }
 
+    /// Returns the ordering between `s`'s end bound and `t`'s end bound.
     pub fn ee(&self) -> Ordering {
         self.ee
     }
