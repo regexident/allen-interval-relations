@@ -45,14 +45,15 @@ mod bound;
 mod bounded;
 mod discreteness;
 mod end_bound;
+mod from_ranges;
 mod range_bounds;
 mod range_bounds_ext;
 mod relation;
 mod start_bound;
 
 pub use self::{
-    atomics::*, bound::*, bounded::*, discreteness::*, end_bound::*, range_bounds::*,
-    range_bounds_ext::*, relation::*, start_bound::*,
+    atomics::*, bound::*, bounded::*, discreteness::*, end_bound::*, from_ranges::*,
+    range_bounds::*, range_bounds_ext::*, relation::*, start_bound::*,
 };
 
 mod sealed {
