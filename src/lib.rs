@@ -19,9 +19,9 @@
 //! Non-discrete time domains support the use of `..`, `..=y`, `x..` and `x..=y` (i.e. inclusive) ranges.
 //!
 //! ```
-//! use allen_intervals::Relation;
+//! use allen_intervals::{FromRanges, Relation};
 //!
-//! assert_eq!(Relation::from_non_discrete_ranges(2.0..=5.0, 5.0..=8.0), Some(Relation::Meets));
+//! assert_eq!(Relation::from_ranges(2.0..=5.0, 5.0..=8.0), Some(Relation::Meets));
 //! ```
 //!
 //! ## Discrete (i.e. quantized) time-domain
@@ -30,9 +30,9 @@
 //! Non-discrete time domains support the use of `..`, `..y`, `x..` and `x..y` (i.e. exclusive) ranges.
 //!
 //! ```
-//! use allen_intervals::Relation;
+//! use allen_intervals::{FromRanges, Relation};
 //!
-//! assert_eq!(Relation::from_discrete_ranges(2..5, 5..8), Some(Relation::Meets));
+//! assert_eq!(Relation::from_ranges(2..5, 5..8), Some(Relation::Meets));
 //! ```
 //!
 //! [allen-interval-algebra]: https://en.wikipedia.org/wiki/Allen%27s_interval_algebra

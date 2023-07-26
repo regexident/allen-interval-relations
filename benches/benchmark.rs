@@ -58,10 +58,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("Discrete atomic relations", |b| {
         fn function<S, T>(s: S, t: T) -> Option<AtomicRelations>
         where
-            S: RangeBounds<DiscreteValue, Discrete>,
-            T: RangeBounds<DiscreteValue, Discrete>,
+            AtomicRelations: FromRanges<S, T>,
         {
-            AtomicRelations::from_discrete_ranges(s, t)
+            AtomicRelations::from_ranges(s, t)
         }
 
         b.iter(|| {
@@ -92,10 +91,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("Non-discrete atomic relations", |b| {
         fn function<S, T>(s: S, t: T) -> Option<AtomicRelations>
         where
-            S: RangeBounds<NonDiscreteValue, NonDiscrete>,
-            T: RangeBounds<NonDiscreteValue, NonDiscrete>,
+            AtomicRelations: FromRanges<S, T>,
         {
-            AtomicRelations::from_non_discrete_ranges(s, t)
+            AtomicRelations::from_ranges(s, t)
         }
 
         b.iter(|| {
@@ -126,10 +124,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("Discrete relation", |b| {
         fn function<S, T>(s: S, t: T) -> Option<Relation>
         where
-            S: RangeBounds<DiscreteValue, Discrete>,
-            T: RangeBounds<DiscreteValue, Discrete>,
+            Relation: FromRanges<S, T>,
         {
-            Relation::from_discrete_ranges(s, t)
+            Relation::from_ranges(s, t)
         }
 
         b.iter(|| {
@@ -160,10 +157,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("Non-discrete relation", |b| {
         fn function<S, T>(s: S, t: T) -> Option<Relation>
         where
-            S: RangeBounds<NonDiscreteValue, NonDiscrete>,
-            T: RangeBounds<NonDiscreteValue, NonDiscrete>,
+            Relation: FromRanges<S, T>,
         {
-            Relation::from_non_discrete_ranges(s, t)
+            Relation::from_ranges(s, t)
         }
 
         b.iter(|| {

@@ -1,6 +1,9 @@
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
+};
 
-use crate::{Bounded, Discrete, Discreteness, NonDiscrete, RangeBounds};
+use crate::{from_ranges::FromRanges, Bounded};
 
 /// A type describing the possible atomic relations between two intervals (e.g. `s` and `t`).
 ///
@@ -53,73 +56,474 @@ pub struct AtomicRelations {
 }
 
 impl AtomicRelations {
-    /// Returns the atomic allen relations between discrete ranges `s` and `t`
-    /// or `None` if any comparisons failures are encountered.
-    #[inline]
-    pub fn from_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
-    where
-        S: RangeBounds<U, Discrete>,
-        T: RangeBounds<U, Discrete>,
-        U: PartialOrd + Bounded,
-    {
-        Self::from_ranges::<S, T, U, Discrete>(s, t)
-    }
-
-    /// Returns the atomic allen relations between non-discrete ranges `s` and `t`
-    /// or `None` if any comparisons failures are encountered.
-    #[inline]
-    pub fn from_non_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
-    where
-        S: RangeBounds<U, NonDiscrete>,
-        T: RangeBounds<U, NonDiscrete>,
-        U: PartialOrd + Bounded,
-    {
-        Self::from_ranges::<S, T, U, NonDiscrete>(s, t)
-    }
-
-    /// Returns the atomic allen relations between ranges `s` and `t`
-    /// or `None` if any comparisons failures are encountered.
-    #[inline]
-    pub fn from_ranges<S, T, U, D>(s: S, t: T) -> Option<Self>
-    where
-        S: RangeBounds<U, D>,
-        T: RangeBounds<U, D>,
-        U: PartialOrd + Bounded,
-        D: Discreteness,
-    {
-        let sb = s.start_bound();
-        let se = s.end_bound();
-        let tb = t.start_bound();
-        let te = t.end_bound();
-
-        assert!(sb <= se, "empty ranges are not supported");
-        assert!(tb <= te, "empty ranges are not supported");
-
-        let bb = sb.partial_cmp(&tb)?;
-        let be = sb.partial_cmp(&te)?;
-        let eb = se.partial_cmp(&tb)?;
-        let ee = se.partial_cmp(&te)?;
-
-        Some(Self { bb, be, eb, ee })
-    }
-
     /// Returns the ordering between `s`'s start bound and `t`'s start bound.
+    #[inline]
     pub fn bb(&self) -> Ordering {
         self.bb
     }
 
     /// Returns the ordering between `s`'s start bound and `t`'s end bound.
+    #[inline]
     pub fn be(&self) -> Ordering {
         self.be
     }
 
     /// Returns the ordering between `s`'s end bound and `t`'s start bound.
+    #[inline]
     pub fn eb(&self) -> Ordering {
         self.eb
     }
 
     /// Returns the ordering between `s`'s end bound and `t`'s end bound.
+    #[inline]
     pub fn ee(&self) -> Ordering {
         self.ee
+    }
+}
+
+// Lhs: RangeFull
+
+impl FromRanges<RangeFull, RangeFull> for AtomicRelations {
+    #[inline]
+    fn from_ranges(s: RangeFull, t: RangeFull) -> Option<Self> {
+        debug_assert_eq!(s, t);
+
+        Some(Self {
+            bb: Ordering::Equal,
+            be: Ordering::Less,
+            eb: Ordering::Greater,
+            ee: Ordering::Equal,
+        })
+    }
+}
+
+impl<T> FromRanges<RangeFull, RangeTo<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(_s: RangeFull, t: RangeTo<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&T::min_value())?;
+        let be = T::min_value().partial_cmp(&t.end)?;
+        let eb = T::max_value().partial_cmp(&T::min_value())?;
+        let ee = T::max_value().partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFull, RangeToInclusive<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(_s: RangeFull, t: RangeToInclusive<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&T::min_value())?;
+        let be = T::min_value().partial_cmp(&t.end)?;
+        let eb = T::max_value().partial_cmp(&T::min_value())?;
+        let ee = T::max_value().partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFull, RangeFrom<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(_s: RangeFull, t: RangeFrom<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&t.start)?;
+        let be = T::min_value().partial_cmp(&T::max_value())?;
+        let eb = T::max_value().partial_cmp(&t.start)?;
+        let ee = T::max_value().partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFull, Range<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(_s: RangeFull, t: Range<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&t.start)?;
+        let be = T::min_value().partial_cmp(&t.end)?;
+        let eb = T::max_value().partial_cmp(&t.start)?;
+        let ee = T::max_value().partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFull, RangeInclusive<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(_s: RangeFull, t: RangeInclusive<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(t.start())?;
+        let be = T::min_value().partial_cmp(t.end())?;
+        let eb = T::max_value().partial_cmp(t.start())?;
+        let ee = T::max_value().partial_cmp(t.end())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// Lhs: RangeTo<T>
+
+impl<T> FromRanges<RangeTo<T>, RangeFull> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeTo<T>, _t: RangeFull) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&T::min_value())?;
+        let be = T::min_value().partial_cmp(&T::max_value())?;
+        let eb = s.end.partial_cmp(&T::min_value())?;
+        let ee = s.end.partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeTo<T>, RangeTo<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeTo<T>, t: RangeTo<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&T::min_value())?;
+        let be = T::min_value().partial_cmp(&t.end)?;
+        let eb = s.end.partial_cmp(&T::min_value())?;
+        let ee = s.end.partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// `FromRanges<RangeTo<T>, RangeToInclusive<T>>` intentionally omitted.
+
+impl<T> FromRanges<RangeTo<T>, RangeFrom<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeTo<T>, t: RangeFrom<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&t.start)?;
+        let be = T::min_value().partial_cmp(&T::max_value())?;
+        let eb = s.end.partial_cmp(&t.start)?;
+        let ee = s.end.partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeTo<T>, Range<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeTo<T>, t: Range<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&t.start)?;
+        let be = T::min_value().partial_cmp(&t.end)?;
+        let eb = s.end.partial_cmp(&t.start)?;
+        let ee = s.end.partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// `FromRanges<RangeTo<T>, RangeInclusive<T>>` intentionally omitted.
+
+// Lhs: RangeToInclusive<T>
+
+impl<T> FromRanges<RangeToInclusive<T>, RangeFull> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeToInclusive<T>, _t: RangeFull) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&T::min_value())?;
+        let be = T::min_value().partial_cmp(&T::max_value())?;
+        let eb = s.end.partial_cmp(&T::min_value())?;
+        let ee = s.end.partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// `FromRanges<RangeToInclusive<T>, RangeTo<T>>` intentionally omitted.
+
+impl<T> FromRanges<RangeToInclusive<T>, RangeToInclusive<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeToInclusive<T>, t: RangeToInclusive<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&T::min_value())?;
+        let be = T::min_value().partial_cmp(&t.end)?;
+        let eb = s.end.partial_cmp(&T::min_value())?;
+        let ee = s.end.partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeToInclusive<T>, RangeFrom<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeToInclusive<T>, t: RangeFrom<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(&t.start)?;
+        let be = T::min_value().partial_cmp(&T::max_value())?;
+        let eb = s.end.partial_cmp(&t.start)?;
+        let ee = s.end.partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// `FromRanges<RangeToInclusive<T>, Range<T>>` intentionally omitted.
+
+impl<T> FromRanges<RangeToInclusive<T>, RangeInclusive<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeToInclusive<T>, t: RangeInclusive<T>) -> Option<Self> {
+        let bb = T::min_value().partial_cmp(t.start())?;
+        let be = T::min_value().partial_cmp(t.end())?;
+        let eb = s.end.partial_cmp(t.start())?;
+        let ee = s.end.partial_cmp(t.end())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// Lhs: RangeFrom<T>
+
+impl<T> FromRanges<RangeFrom<T>, RangeFull> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeFrom<T>, _t: RangeFull) -> Option<Self> {
+        let bb = s.start.partial_cmp(&T::min_value())?;
+        let be = s.start.partial_cmp(&T::max_value())?;
+        let eb = T::max_value().partial_cmp(&T::min_value())?;
+        let ee = T::max_value().partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFrom<T>, RangeTo<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeFrom<T>, t: RangeTo<T>) -> Option<Self> {
+        let bb = s.start.partial_cmp(&T::min_value())?;
+        let be = s.start.partial_cmp(&t.end)?;
+        let eb = T::max_value().partial_cmp(&T::min_value())?;
+        let ee = T::max_value().partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFrom<T>, RangeToInclusive<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeFrom<T>, t: RangeToInclusive<T>) -> Option<Self> {
+        let bb = s.start.partial_cmp(&T::min_value())?;
+        let be = s.start.partial_cmp(&t.end)?;
+        let eb = T::max_value().partial_cmp(&T::min_value())?;
+        let ee = T::max_value().partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFrom<T>, RangeFrom<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeFrom<T>, t: RangeFrom<T>) -> Option<Self> {
+        let bb = s.start.partial_cmp(&t.start)?;
+        let be = s.start.partial_cmp(&T::max_value())?;
+        let eb = T::max_value().partial_cmp(&t.start)?;
+        let ee = T::max_value().partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFrom<T>, Range<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeFrom<T>, t: Range<T>) -> Option<Self> {
+        let bb = s.start.partial_cmp(&t.start)?;
+        let be = s.start.partial_cmp(&t.end)?;
+        let eb = T::max_value().partial_cmp(&t.start)?;
+        let ee = T::max_value().partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeFrom<T>, RangeInclusive<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeFrom<T>, t: RangeInclusive<T>) -> Option<Self> {
+        let bb = s.start.partial_cmp(t.start())?;
+        let be = s.start.partial_cmp(t.end())?;
+        let eb = T::max_value().partial_cmp(t.start())?;
+        let ee = T::max_value().partial_cmp(t.end())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// Lhs: Range<T>
+
+impl<T> FromRanges<Range<T>, RangeFull> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: Range<T>, _t: RangeFull) -> Option<Self> {
+        let bb = s.start.partial_cmp(&T::min_value())?;
+        let be = s.start.partial_cmp(&T::max_value())?;
+        let eb = s.end.partial_cmp(&T::min_value())?;
+        let ee = s.end.partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<Range<T>, RangeTo<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: Range<T>, t: RangeTo<T>) -> Option<Self> {
+        let bb = s.start.partial_cmp(&T::min_value())?;
+        let be = s.start.partial_cmp(&t.end)?;
+        let eb = s.end.partial_cmp(&T::min_value())?;
+        let ee = s.end.partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// `FromRanges<Range<T>, RangeToInclusive<T>>` intentionally omitted.
+
+impl<T> FromRanges<Range<T>, RangeFrom<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: Range<T>, t: RangeFrom<T>) -> Option<Self> {
+        let bb = s.start.partial_cmp(&t.start)?;
+        let be = s.start.partial_cmp(&T::max_value())?;
+        let eb = s.end.partial_cmp(&t.start)?;
+        let ee = s.end.partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<Range<T>, Range<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: Range<T>, t: Range<T>) -> Option<Self> {
+        let bb = s.start.partial_cmp(&t.start)?;
+        let be = s.start.partial_cmp(&t.end)?;
+        let eb = s.end.partial_cmp(&t.start)?;
+        let ee = s.end.partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// `FromRanges<Range<T>, RangeInclusive<T>>` intentionally omitted.
+
+// Lhs: RangeInclusive<T>
+
+impl<T> FromRanges<RangeInclusive<T>, RangeFull> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeInclusive<T>, _t: RangeFull) -> Option<Self> {
+        let bb = s.start().partial_cmp(&T::min_value())?;
+        let be = s.start().partial_cmp(&T::max_value())?;
+        let eb = s.end().partial_cmp(&T::min_value())?;
+        let ee = s.end().partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// `FromRanges<RangeInclusive<T>, RangeTo<T>>` intentionally omitted.
+
+impl<T> FromRanges<RangeInclusive<T>, RangeToInclusive<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeInclusive<T>, t: RangeToInclusive<T>) -> Option<Self> {
+        let bb = s.start().partial_cmp(&T::min_value())?;
+        let be = s.start().partial_cmp(&t.end)?;
+        let eb = s.end().partial_cmp(&T::min_value())?;
+        let ee = s.end().partial_cmp(&t.end)?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+impl<T> FromRanges<RangeInclusive<T>, RangeFrom<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeInclusive<T>, t: RangeFrom<T>) -> Option<Self> {
+        let bb = s.start().partial_cmp(&t.start)?;
+        let be = s.start().partial_cmp(&T::max_value())?;
+        let eb = s.end().partial_cmp(&t.start)?;
+        let ee = s.end().partial_cmp(&T::max_value())?;
+
+        Some(Self { bb, be, eb, ee })
+    }
+}
+
+// `FromRanges<RangeInclusive<T>, Range<T>>` intentionally omitted.
+
+impl<T> FromRanges<RangeInclusive<T>, RangeInclusive<T>> for AtomicRelations
+where
+    T: PartialOrd<T> + Bounded,
+{
+    #[inline]
+    fn from_ranges(s: RangeInclusive<T>, t: RangeInclusive<T>) -> Option<Self> {
+        let bb = s.start().partial_cmp(t.start())?;
+        let be = s.start().partial_cmp(t.end())?;
+        let eb = s.end().partial_cmp(t.start())?;
+        let ee = s.end().partial_cmp(t.end())?;
+
+        Some(Self { bb, be, eb, ee })
     }
 }

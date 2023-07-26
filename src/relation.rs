@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use crate::{AtomicRelations, Bounded, Discrete, Discreteness, NonDiscrete, RangeBounds};
+use crate::{AtomicRelations, FromRanges};
 
 /// A type describing the possible relations between two intervals (e.g. `s` and `t`).
 ///
@@ -185,44 +185,16 @@ impl From<AtomicRelations> for Relation {
     }
 }
 
-impl Relation {
-    /// Returns the allen relation between discrete ranges `s` and `t`
-    /// or `None` if any comparisons failures are encountered.
-    #[inline]
-    pub fn from_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
-    where
-        S: RangeBounds<U, Discrete>,
-        T: RangeBounds<U, Discrete>,
-        U: Clone + PartialEq + PartialOrd + Bounded,
-    {
-        Self::from_ranges(s, t)
-    }
-
-    /// Returns the allen relation between non-discrete ranges `s` and `t`
-    /// or `None` if any comparisons failures are encountered.
-    #[inline]
-    pub fn from_non_discrete_ranges<S, T, U>(s: S, t: T) -> Option<Self>
-    where
-        S: RangeBounds<U, NonDiscrete>,
-        T: RangeBounds<U, NonDiscrete>,
-        U: Clone + PartialEq + PartialOrd + Bounded,
-    {
-        Self::from_ranges(s, t)
-    }
-
-    /// Returns the allen relation between ranges `s` and `t`
-    /// or `None` if any comparisons failures are encountered.
-    #[inline]
-    pub fn from_ranges<S, T, U, D>(s: S, t: T) -> Option<Self>
-    where
-        S: RangeBounds<U, D>,
-        T: RangeBounds<U, D>,
-        U: Clone + PartialEq + PartialOrd + Bounded,
-        D: Discreteness,
-    {
+impl<S, T> FromRanges<S, T> for Relation
+where
+    AtomicRelations: FromRanges<S, T>,
+{
+    fn from_ranges(s: S, t: T) -> Option<Self> {
         AtomicRelations::from_ranges(s, t).map(Relation::from)
     }
+}
 
+impl Relation {
     /// Returns the relation's converse.
     pub fn as_converse(&self) -> Self {
         match self {
@@ -298,22 +270,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ────────────────┐
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(..4, 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(..4, 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ────────────────┐
             // t:                          └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(..4, 5..8), EXPECTED);
+            assert_eq!(Relation::from_ranges(..4, 5..8), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:      ┌──────────────┐
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(1..4, 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(1..4, 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:      ┌──────────────┐
             // t:                          └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(1..4, 5..8), EXPECTED);
+            assert_eq!(Relation::from_ranges(1..4, 5..8), EXPECTED);
         }
 
         #[test]
@@ -321,22 +293,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ────────────────┐─ ─ ┐
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(..=3, 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(..=3, 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ────────────────┐─ ─ ┐
             // t:                          └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(..=3, 5..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(..=3, 5..=7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:      ┌──────────────┐─ ─ ┐
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(1..=3, 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(1..=3, 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:      ┌──────────────┐─ ─ ┐
             // t:                          └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(1..=3, 5..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(1..=3, 5..=7), EXPECTED);
         }
     }
 
@@ -350,22 +322,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t: ─ ─ ────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(5.., ..4), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., ..4), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐
             // t: ─ ─ ────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(5..8, ..4), EXPECTED);
+            assert_eq!(Relation::from_ranges(5..8, ..4), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t:      └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(5.., 1..4), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., 1..4), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐
             // t:      └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(5..8, 1..4), EXPECTED);
+            assert_eq!(Relation::from_ranges(5..8, 1..4), EXPECTED);
         }
 
         #[test]
@@ -373,22 +345,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t: ─ ─ ────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(5.., ..=3), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., ..=3), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐─ ─ ┐
             // t: ─ ─ ────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(5..=7, ..=3), EXPECTED);
+            assert_eq!(Relation::from_ranges(5..=7, ..=3), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t:      └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(5.., 1..=3), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., 1..=3), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐─ ─ ┐
             // t:      └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(5..=7, 1..=3), EXPECTED);
+            assert_eq!(Relation::from_ranges(5..=7, 1..=3), EXPECTED);
         }
     }
 
@@ -402,22 +374,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ─────────────────────┐
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(..5, 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(..5, 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ─────────────────────┐
             // t:                          └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(..5, 5..8), EXPECTED);
+            assert_eq!(Relation::from_ranges(..5, 5..8), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:           ┌──────────────┐
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(2..5, 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(2..5, 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:           ┌──────────────┐
             // t:                          └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(2..5, 5..8), EXPECTED);
+            assert_eq!(Relation::from_ranges(2..5, 5..8), EXPECTED);
         }
 
         #[test]
@@ -425,22 +397,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ─────────────────────┐─ ─ ┐
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(..=5, 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(..=5, 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ─────────────────────┐─ ─ ┐
             // t:                          └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(..=5, 5..=8), EXPECTED);
+            assert_eq!(Relation::from_ranges(..=5, 5..=8), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:           ┌──────────────┐─ ─ ┐
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(2..=5, 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(2..=5, 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:           ┌──────────────┐─ ─ ┐
             // t:                          └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(2..=5, 5..=8), EXPECTED);
+            assert_eq!(Relation::from_ranges(2..=5, 5..=8), EXPECTED);
         }
     }
 
@@ -454,22 +426,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t: ─ ─ ─────────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(5.., ..5), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., ..5), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐
             // t: ─ ─ ─────────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(5..8, ..5), EXPECTED);
+            assert_eq!(Relation::from_ranges(5..8, ..5), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t:           └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(5.., 2..5), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., 2..5), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐
             // t:           └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(5..8, 2..5), EXPECTED);
+            assert_eq!(Relation::from_ranges(5..8, 2..5), EXPECTED);
         }
 
         #[test]
@@ -477,22 +449,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t: ─ ─ ─────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(5.., ..=5), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., ..=5), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐─ ─ ┐
             // t: ─ ─ ─────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(5..=8, ..=5), EXPECTED);
+            assert_eq!(Relation::from_ranges(5..=8, ..=5), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t:           └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(5.., 2..=5), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., 2..=5), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐─ ─ ┐
             // t:           └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(5..=8, 2..=5), EXPECTED);
+            assert_eq!(Relation::from_ranges(5..=8, 2..=5), EXPECTED);
         }
     }
 
@@ -506,22 +478,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ──────────────────────────┐
             // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(..6, 4..), EXPECTED);
+            assert_eq!(Relation::from_ranges(..6, 4..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ──────────────────────────┐
             // t:                     └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(..6, 4..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(..6, 4..7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌──────────────┐
             // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(3..6, 4..), EXPECTED);
+            assert_eq!(Relation::from_ranges(3..6, 4..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌──────────────┐
             // t:                     └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(3..6, 4..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(3..6, 4..7), EXPECTED);
         }
 
         #[test]
@@ -529,22 +501,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ──────────────────────────┐─ ─ ┐
             // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(..=6, 4..), EXPECTED);
+            assert_eq!(Relation::from_ranges(..=6, 4..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ──────────────────────────┐─ ─ ┐
             // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(..=6, 4..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(..=6, 4..=7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌──────────────┐─ ─ ┐
             // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(3..=6, 4..), EXPECTED);
+            assert_eq!(Relation::from_ranges(3..=6, 4..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌──────────────┐─ ─ ┐
             // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(3..=6, 4..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(3..=6, 4..=7), EXPECTED);
         }
     }
 
@@ -558,22 +530,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌────────────────────────── ─ ─
             // t: ─ ─ ──────────────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4.., ..6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4.., ..6), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐
             // t: ─ ─ ──────────────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4..7, ..6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..7, ..6), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌────────────────────────── ─ ─
             // t:                └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4.., 3..6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4.., 3..6), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐
             // t:                └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4..7, 3..6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..7, 3..6), EXPECTED);
         }
 
         #[test]
@@ -581,22 +553,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌────────────────────────── ─ ─
             // t: ─ ─ ──────────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4.., ..=6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4.., ..=6), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐─ ─ ┐
             // t: ─ ─ ──────────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4..=7, ..=6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=7, ..=6), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌────────────────────────── ─ ─
             // t:                └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4.., 3..=6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4.., 3..=6), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐─ ─ ┐
             // t:                └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4..=7, 3..=6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=7, 3..=6), EXPECTED);
         }
     }
 
@@ -610,12 +582,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐
             // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(4..7, 4..), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..7, 4..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐
             // t:                     └───────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4..7, 4..8), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..7, 4..8), EXPECTED);
         }
 
         #[test]
@@ -623,12 +595,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐─ ─ ┐
             // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(4..=7, 4..), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=7, 4..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐─ ─ ┐
             // t:                     └───────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4..=7, 4..=8), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=7, 4..=8), EXPECTED);
         }
     }
 
@@ -642,12 +614,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌────────────────────────── ─ ─
             // t:                     └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4.., 4..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4.., 4..7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌───────────────────┐
             // t:                     └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4..8, 4..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..8, 4..7), EXPECTED);
         }
 
         #[test]
@@ -655,12 +627,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌────────────────────────── ─ ─
             // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4.., 4..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4.., 4..=7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌───────────────────┐─ ─ ┐
             // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4..=8, 4..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=8, 4..=7), EXPECTED);
         }
     }
 
@@ -674,12 +646,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌─────────────────────────────── ─ ─
             // t:                     └─────────┘
-            assert_eq!(Relation::from_discrete_ranges(3.., 4..6), EXPECTED);
+            assert_eq!(Relation::from_ranges(3.., 4..6), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌───────────────────┐
             // t:                     └─────────┘
-            assert_eq!(Relation::from_discrete_ranges(3..7, 4..6), EXPECTED);
+            assert_eq!(Relation::from_ranges(3..7, 4..6), EXPECTED);
         }
 
         #[test]
@@ -687,12 +659,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌─────────────────────────────── ─ ─
             // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(3.., 4..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(3.., 4..=7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌───────────────────┐─ ─ ┐
             // t:                     └─────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(3..=7, 4..=6), EXPECTED);
+            assert_eq!(Relation::from_ranges(3..=7, 4..=6), EXPECTED);
         }
     }
 
@@ -706,12 +678,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌─────────┐
             // t:                └─────────────────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(4..6, 3..), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..6, 3..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌─────────┐
             // t:                └───────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4..6, 3..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..6, 3..7), EXPECTED);
         }
 
         #[test]
@@ -719,12 +691,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌─────────┐─ ─ ┐
             // t:                └─────────────────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(4..=7, 3..), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=7, 3..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌─────────┐─ ─ ┐
             // t:                └───────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4..=6, 3..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=6, 3..=7), EXPECTED);
         }
     }
 
@@ -738,12 +710,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐
             // t: ─ ─ ───────────────────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4..7, ..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..7, ..7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐
             // t:                └───────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(4..7, 3..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..7, 3..7), EXPECTED);
         }
 
         #[test]
@@ -751,12 +723,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌──────────────┐─ ─ ┐
             // t: ─ ─ ───────────────────────────────┘
-            assert_eq!(Relation::from_non_discrete_ranges(4..=7, ..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=7, ..=7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌──────────────┐─ ─ ┐
             // t:                     └───────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4..=7, 3..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=7, 3..=7), EXPECTED);
         }
     }
 
@@ -770,12 +742,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // t: ─ ─ ───────────────────────────────┐
             // t:                     └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(..7, 4..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(..7, 4..7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌───────────────────┐
             // t:                     └──────────────┘
-            assert_eq!(Relation::from_discrete_ranges(3..7, 4..7), EXPECTED);
+            assert_eq!(Relation::from_ranges(3..7, 4..7), EXPECTED);
         }
 
         #[test]
@@ -783,12 +755,12 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // t: ─ ─ ───────────────────────────────┐─ ─ ┐
             // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(..=7, 4..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(..=7, 4..=7), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                ┌───────────────────┐─ ─ ┐
             // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(3..=7, 4..=7), EXPECTED);
+            assert_eq!(Relation::from_ranges(3..=7, 4..=7), EXPECTED);
         }
     }
 
@@ -802,25 +774,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ─────────────────────────────────────────── ─ ─
             // t: ─ ─ ─────────────────────────────────────────── ─ ─
-            assert_eq!(
-                Relation::from_discrete_ranges::<_, _, isize>(.., ..),
-                EXPECTED
-            );
+            assert_eq!(Relation::from_ranges(.., ..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_discrete_ranges(5.., 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ─────────────────────┐
             // t: ─ ─ ─────────────────────┘
-            assert_eq!(Relation::from_discrete_ranges(..5, ..5), EXPECTED);
+            assert_eq!(Relation::from_ranges(..5, ..5), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌─────────┐
             // t:                     └─────────┘
-            assert_eq!(Relation::from_discrete_ranges(4..6, 4..6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..6, 4..6), EXPECTED);
         }
 
         #[test]
@@ -828,25 +797,22 @@ mod tests {
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ─────────────────────────────────────────── ─ ─
             // t: ─ ─ ─────────────────────────────────────────── ─ ─
-            assert_eq!(
-                Relation::from_non_discrete_ranges::<_, _, isize>(.., ..),
-                EXPECTED
-            );
+            assert_eq!(Relation::from_ranges(.., ..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                          ┌───────────────────── ─ ─
             // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_non_discrete_ranges(5.., 5..), EXPECTED);
+            assert_eq!(Relation::from_ranges(5.., 5..), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s: ─ ─ ─────────────────────┐─ ─ ┐
             // t: ─ ─ ─────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(..=5, ..=5), EXPECTED);
+            assert_eq!(Relation::from_ranges(..=5, ..=5), EXPECTED);
 
             //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
             // s:                     ┌─────────┐─ ─ ┐
             // t:                     └─────────┘─ ─ ┘
-            assert_eq!(Relation::from_non_discrete_ranges(4..=6, 4..=6), EXPECTED);
+            assert_eq!(Relation::from_ranges(4..=6, 4..=6), EXPECTED);
         }
     }
 }
