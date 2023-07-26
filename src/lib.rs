@@ -24,9 +24,9 @@
 //! ```
 //! use allen_interval_relations::{FromRanges, Relation};
 //!
-//! assert_eq!(Relation::from_ranges(2.0..=4.0, 5.0..=8.0), Some(Relation::Precedes));
-//! assert_eq!(Relation::from_ranges(2.0..=5.0, 5.0..=8.0), Some(Relation::Meets));
-//! assert_eq!(Relation::from_ranges(2.0..=6.0, 5.0..=8.0), Some(Relation::Overlaps));
+//! assert_eq!(Relation::from_ranges(2.0..=4.0, 5.0..=8.0), Some(Relation::Precedes { is_inverted: false }));
+//! assert_eq!(Relation::from_ranges(2.0..=5.0, 5.0..=8.0), Some(Relation::Meets { is_inverted: false }));
+//! assert_eq!(Relation::from_ranges(2.0..=6.0, 5.0..=8.0), Some(Relation::Overlaps { is_inverted: false }));
 //! ```
 //!
 //! ## Discrete (i.e. quantized) time-domain
@@ -40,9 +40,9 @@
 //! ```
 //! use allen_interval_relations::{FromRanges, Relation};
 //!
-//! assert_eq!(Relation::from_ranges(2..4, 5..8), Some(Relation::Precedes));
-//! assert_eq!(Relation::from_ranges(2..5, 5..8), Some(Relation::Meets));
-//! assert_eq!(Relation::from_ranges(2..6, 5..8), Some(Relation::Overlaps));
+//! assert_eq!(Relation::from_ranges(2..4, 5..8), Some(Relation::Precedes { is_inverted: false }));
+//! assert_eq!(Relation::from_ranges(2..5, 5..8), Some(Relation::Meets { is_inverted: false }));
+//! assert_eq!(Relation::from_ranges(2..6, 5..8), Some(Relation::Overlaps { is_inverted: false }));
 //! ```
 //!
 //! [allen-interval-algebra]: https://en.wikipedia.org/wiki/Allen%27s_interval_algebra
