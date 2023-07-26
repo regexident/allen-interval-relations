@@ -40,9 +40,9 @@
 
 #![warn(missing_docs)]
 
-mod atomics;
+mod atomic_relations;
 mod bounded;
 mod from_ranges;
 mod relation;
 
-pub use self::{atomics::*, bounded::*, from_ranges::*, relation::*};
+pub use self::{atomic_relations::*, bounded::*, from_ranges::*, relation::*};
