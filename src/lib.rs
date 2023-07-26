@@ -16,23 +16,33 @@
 //! ## Non-discrete (i.e. un-quantized) time-domain
 //!
 //! If your time-values are represented using a floating-point type (e.g. `f32` or `f64`), then your time domain is most likely non-discrete.
-//! Non-discrete time domains support the use of `..`, `..=y`, `x..` and `x..=y` (i.e. inclusive) ranges.
+//!
+//! > 💡 Non-discrete time domains support the use of `..`, `..=y`, `x..` and `x..=y` (i.e. inclusive) ranges.
+//!
+//! > ⚠️ Values in non-discrete (i.e. continuous) domains have no width. As such a range `..=x` is considered meeting a range `x..`, rather than overlapping it.
 //!
 //! ```
-//! use allen_intervals::{FromRanges, Relation};
+//! use allen_interval_relations::{FromRanges, Relation};
 //!
+//! assert_eq!(Relation::from_ranges(2.0..=4.0, 5.0..=8.0), Some(Relation::Precedes));
 //! assert_eq!(Relation::from_ranges(2.0..=5.0, 5.0..=8.0), Some(Relation::Meets));
+//! assert_eq!(Relation::from_ranges(2.0..=6.0, 5.0..=8.0), Some(Relation::Overlaps));
 //! ```
 //!
 //! ## Discrete (i.e. quantized) time-domain
 //!
 //! If your time-values however are represented using an integer type (e.g. `f32` or `f64`), then your time domain is most likely non-discrete.
-//! Non-discrete time domains support the use of `..`, `..y`, `x..` and `x..y` (i.e. exclusive) ranges.
+//!
+//! > 💡 Discrete time domains support the use of `..`, `..y`, `x..` and `x..y` (i.e. exclusive) ranges.
+//!
+//! > ⚠️ Values in discrete (i.e. quantized) domains have a width. As such a range `..x` is considered overlapping a range `x..`, rather than meeting it.
 //!
 //! ```
-//! use allen_intervals::{FromRanges, Relation};
+//! use allen_interval_relations::{FromRanges, Relation};
 //!
+//! assert_eq!(Relation::from_ranges(2..4, 5..8), Some(Relation::Precedes));
 //! assert_eq!(Relation::from_ranges(2..5, 5..8), Some(Relation::Meets));
+//! assert_eq!(Relation::from_ranges(2..6, 5..8), Some(Relation::Overlaps));
 //! ```
 //!
 //! [allen-interval-algebra]: https://en.wikipedia.org/wiki/Allen%27s_interval_algebra
