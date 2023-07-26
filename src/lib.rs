@@ -48,7 +48,14 @@
 //! [allen-interval-algebra]: https://en.wikipedia.org/wiki/Allen%27s_interval_algebra
 //! [quantization]: https://en.wikipedia.org/wiki/Quantization
 
+#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![warn(missing_docs)]
+
+#[cfg(all(not(test), not(feature = "std")))]
+extern crate core as std;
+
+#[cfg(all(test, feature = "std"))]
+extern crate std;
 
 mod atomic_relations;
 mod bounded;
