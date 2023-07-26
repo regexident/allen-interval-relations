@@ -2,6 +2,20 @@
 name = "allen-interval-relations"
 version = "0.1.0"
 edition = "2021"
+categories = ["date-and-time", "science"]
+description = "An efficient implementation of Allen's interval relations for Rust's range types."
+keywords = [
+    "constraint",
+    "constraint-programming",
+    "time-span",
+    "time-interval",
+    "temporal-logic",
+    "temporal-reasoning",
+    "no_std",
+]
+license = "MPL-2.0"
+readme = "README.md"
+repository = "https://github.com/regexident/allen-interval-relations"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
