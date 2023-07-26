@@ -219,600 +219,344 @@ impl Relation {
 mod tests {
     use super::*;
 
-    mod converses {
-        use super::*;
+    #[test]
+    fn converses() {
+        // Symmetric relations:
 
-        #[test]
-        fn asymmetric() {
-            let relations = [
-                Relation::Precedes,
-                Relation::Meets,
-                Relation::Overlaps,
-                Relation::IsFinishedBy,
-                Relation::Contains,
-                Relation::Starts,
-                Relation::IsStartedBy,
-                Relation::IsContainedBy,
-                Relation::Finishes,
-                Relation::IsOverlappedBy,
-                Relation::IsMetBy,
-                Relation::IsPrecededBy,
-            ];
+        let symmetric_relations = [Relation::Equals];
 
-            for relation in relations {
-                let first_converse = relation.as_converse();
-                assert_ne!(relation, first_converse);
-                let second_converse = first_converse.as_converse();
-                assert_eq!(relation, second_converse);
-            }
+        for relation in symmetric_relations {
+            let first_converse = relation.as_converse();
+            assert_eq!(relation, first_converse);
+            let second_converse = first_converse.as_converse();
+            assert_eq!(relation, second_converse);
         }
 
-        #[test]
-        fn symmetric() {
-            let relations = [Relation::Equals];
+        // Asymmetric relations:
 
-            for relation in relations {
-                let first_converse = relation.as_converse();
-                assert_eq!(relation, first_converse);
-                let second_converse = first_converse.as_converse();
-                assert_eq!(relation, second_converse);
-            }
+        let asymmetric_relations = [
+            Relation::Precedes,
+            Relation::Meets,
+            Relation::Overlaps,
+            Relation::IsFinishedBy,
+            Relation::Contains,
+            Relation::Starts,
+            Relation::IsStartedBy,
+            Relation::IsContainedBy,
+            Relation::Finishes,
+            Relation::IsOverlappedBy,
+            Relation::IsMetBy,
+            Relation::IsPrecededBy,
+        ];
+
+        for relation in asymmetric_relations {
+            let first_converse = relation.as_converse();
+            assert_ne!(relation, first_converse);
+            let second_converse = first_converse.as_converse();
+            assert_eq!(relation, second_converse);
         }
     }
 
-    mod precedes {
-        use super::*;
-
+    #[test]
+    fn precedes() {
         const EXPECTED: Option<Relation> = Some(Relation::Precedes);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ────────────────┐
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(..4, 5..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s: ─ ─ ────────────────┐
+        // t:                          └───────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(..4, 5..), EXPECTED);
+        assert_eq!(Relation::from_ranges(..=4, 5..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ────────────────┐
-            // t:                          └──────────────┘
-            assert_eq!(Relation::from_ranges(..4, 5..8), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s: ─ ─ ────────────────┐
+        // t:                          └──────────────┘
+        assert_eq!(Relation::from_ranges(..4, 5..8), EXPECTED);
+        assert_eq!(Relation::from_ranges(..=4, 5..=8), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:      ┌──────────────┐
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(1..4, 5..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:      ┌──────────────┐
+        // t:                          └───────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(1..4, 5..), EXPECTED);
+        assert_eq!(Relation::from_ranges(1..=4, 5..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:      ┌──────────────┐
-            // t:                          └──────────────┘
-            assert_eq!(Relation::from_ranges(1..4, 5..8), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ────────────────┐─ ─ ┐
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(..=3, 5..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ────────────────┐─ ─ ┐
-            // t:                          └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(..=3, 5..=7), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:      ┌──────────────┐─ ─ ┐
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(1..=3, 5..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:      ┌──────────────┐─ ─ ┐
-            // t:                          └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(1..=3, 5..=7), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:      ┌──────────────┐
+        // t:                          └──────────────┘
+        assert_eq!(Relation::from_ranges(1..4, 5..8), EXPECTED);
+        assert_eq!(Relation::from_ranges(1..=4, 5..=8), EXPECTED);
     }
 
-    mod is_preceded_by {
-        use super::*;
-
+    #[test]
+    fn is_preceded_by() {
         const EXPECTED: Option<Relation> = Some(Relation::IsPrecededBy);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t: ─ ─ ────────────────┘
-            assert_eq!(Relation::from_ranges(5.., ..4), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌───────────────────── ─ ─
+        // t: ─ ─ ────────────────┘
+        assert_eq!(Relation::from_ranges(5.., ..4), EXPECTED);
+        assert_eq!(Relation::from_ranges(5.., ..=4), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐
-            // t: ─ ─ ────────────────┘
-            assert_eq!(Relation::from_ranges(5..8, ..4), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌──────────────┐
+        // t: ─ ─ ────────────────┘
+        assert_eq!(Relation::from_ranges(5..8, ..4), EXPECTED);
+        assert_eq!(Relation::from_ranges(5..=8, ..=4), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t:      └──────────────┘
-            assert_eq!(Relation::from_ranges(5.., 1..4), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌───────────────────── ─ ─
+        // t:      └──────────────┘
+        assert_eq!(Relation::from_ranges(5.., 1..4), EXPECTED);
+        assert_eq!(Relation::from_ranges(5.., 1..=4), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐
-            // t:      └──────────────┘
-            assert_eq!(Relation::from_ranges(5..8, 1..4), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t: ─ ─ ────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(5.., ..=3), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐─ ─ ┐
-            // t: ─ ─ ────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(5..=7, ..=3), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t:      └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(5.., 1..=3), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐─ ─ ┐
-            // t:      └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(5..=7, 1..=3), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌──────────────┐
+        // t:      └──────────────┘
+        assert_eq!(Relation::from_ranges(5.., 1..4), EXPECTED);
+        assert_eq!(Relation::from_ranges(5.., 1..=4), EXPECTED);
     }
 
-    mod meets {
-        use super::*;
-
+    #[test]
+    fn meets() {
         const EXPECTED: Option<Relation> = Some(Relation::Meets);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ─────────────────────┐
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(..5, 5..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s: ─ ─ ─────────────────────┐
+        // t:                          └───────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(..5, 5..), EXPECTED);
+        assert_eq!(Relation::from_ranges(..5, 5..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ─────────────────────┐
-            // t:                          └──────────────┘
-            assert_eq!(Relation::from_ranges(..5, 5..8), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s: ─ ─ ─────────────────────┐
+        // t:                          └──────────────┘
+        assert_eq!(Relation::from_ranges(..5, 5..8), EXPECTED);
+        assert_eq!(Relation::from_ranges(..5, 5..8), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:           ┌──────────────┐
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(2..5, 5..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:           ┌──────────────┐
+        // t:                          └───────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(2..5, 5..), EXPECTED);
+        assert_eq!(Relation::from_ranges(2..5, 5..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:           ┌──────────────┐
-            // t:                          └──────────────┘
-            assert_eq!(Relation::from_ranges(2..5, 5..8), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ─────────────────────┐─ ─ ┐
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(..=5, 5..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ─────────────────────┐─ ─ ┐
-            // t:                          └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(..=5, 5..=8), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:           ┌──────────────┐─ ─ ┐
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(2..=5, 5..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:           ┌──────────────┐─ ─ ┐
-            // t:                          └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(2..=5, 5..=8), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:           ┌──────────────┐
+        // t:                          └──────────────┘
+        assert_eq!(Relation::from_ranges(2..5, 5..8), EXPECTED);
+        assert_eq!(Relation::from_ranges(2..5, 5..8), EXPECTED);
     }
 
-    mod is_met_by {
-        use super::*;
-
+    #[test]
+    fn is_met_by() {
         const EXPECTED: Option<Relation> = Some(Relation::IsMetBy);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t: ─ ─ ─────────────────────┘
-            assert_eq!(Relation::from_ranges(5.., ..5), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌───────────────────── ─ ─
+        // t: ─ ─ ─────────────────────┘
+        assert_eq!(Relation::from_ranges(5.., ..5), EXPECTED);
+        assert_eq!(Relation::from_ranges(5.., ..=5), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐
-            // t: ─ ─ ─────────────────────┘
-            assert_eq!(Relation::from_ranges(5..8, ..5), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌──────────────┐
+        // t: ─ ─ ─────────────────────┘
+        assert_eq!(Relation::from_ranges(5..8, ..5), EXPECTED);
+        assert_eq!(Relation::from_ranges(5..=8, ..=5), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t:           └──────────────┘
-            assert_eq!(Relation::from_ranges(5.., 2..5), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌───────────────────── ─ ─
+        // t:           └──────────────┘
+        assert_eq!(Relation::from_ranges(5.., 2..5), EXPECTED);
+        assert_eq!(Relation::from_ranges(5.., 2..=5), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐
-            // t:           └──────────────┘
-            assert_eq!(Relation::from_ranges(5..8, 2..5), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t: ─ ─ ─────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(5.., ..=5), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐─ ─ ┐
-            // t: ─ ─ ─────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(5..=8, ..=5), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t:           └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(5.., 2..=5), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐─ ─ ┐
-            // t:           └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(5..=8, 2..=5), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌──────────────┐
+        // t:           └──────────────┘
+        assert_eq!(Relation::from_ranges(5..8, 2..5), EXPECTED);
+        assert_eq!(Relation::from_ranges(5..=8, 2..=5), EXPECTED);
     }
 
-    mod overlaps_with {
-        use super::*;
-
+    #[test]
+    fn overlaps_with() {
         const EXPECTED: Option<Relation> = Some(Relation::Overlaps);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ──────────────────────────┐
-            // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(..6, 4..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s: ─ ─ ──────────────────────────┐
+        // t:                     └────────────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(..6, 4..), EXPECTED);
+        assert_eq!(Relation::from_ranges(..=6, 4..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ──────────────────────────┐
-            // t:                     └──────────────┘
-            assert_eq!(Relation::from_ranges(..6, 4..7), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s: ─ ─ ──────────────────────────┐
+        // t:                     └──────────────┘
+        assert_eq!(Relation::from_ranges(..6, 4..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(..=6, 4..=7), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌──────────────┐
-            // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(3..6, 4..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                ┌──────────────┐
+        // t:                     └────────────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(3..6, 4..), EXPECTED);
+        assert_eq!(Relation::from_ranges(3..=6, 4..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌──────────────┐
-            // t:                     └──────────────┘
-            assert_eq!(Relation::from_ranges(3..6, 4..7), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ──────────────────────────┐─ ─ ┐
-            // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(..=6, 4..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ──────────────────────────┐─ ─ ┐
-            // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(..=6, 4..=7), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌──────────────┐─ ─ ┐
-            // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(3..=6, 4..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌──────────────┐─ ─ ┐
-            // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(3..=6, 4..=7), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                ┌──────────────┐
+        // t:                     └──────────────┘
+        assert_eq!(Relation::from_ranges(3..6, 4..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(3..=6, 4..=7), EXPECTED);
     }
 
-    mod is_overlapped_by {
-        use super::*;
-
+    #[test]
+    fn is_overlapped_by() {
         const EXPECTED: Option<Relation> = Some(Relation::IsOverlappedBy);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌────────────────────────── ─ ─
-            // t: ─ ─ ──────────────────────────┘
-            assert_eq!(Relation::from_ranges(4.., ..6), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌────────────────────────── ─ ─
+        // t: ─ ─ ──────────────────────────┘
+        assert_eq!(Relation::from_ranges(4.., ..6), EXPECTED);
+        assert_eq!(Relation::from_ranges(4.., ..=6), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐
-            // t: ─ ─ ──────────────────────────┘
-            assert_eq!(Relation::from_ranges(4..7, ..6), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌──────────────┐
+        // t: ─ ─ ──────────────────────────┘
+        assert_eq!(Relation::from_ranges(4..7, ..6), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=7, ..=6), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌────────────────────────── ─ ─
-            // t:                └──────────────┘
-            assert_eq!(Relation::from_ranges(4.., 3..6), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌────────────────────────── ─ ─
+        // t:                └──────────────┘
+        assert_eq!(Relation::from_ranges(4.., 3..6), EXPECTED);
+        assert_eq!(Relation::from_ranges(4.., 3..=6), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐
-            // t:                └──────────────┘
-            assert_eq!(Relation::from_ranges(4..7, 3..6), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌────────────────────────── ─ ─
-            // t: ─ ─ ──────────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4.., ..=6), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐─ ─ ┐
-            // t: ─ ─ ──────────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4..=7, ..=6), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌────────────────────────── ─ ─
-            // t:                └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4.., 3..=6), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐─ ─ ┐
-            // t:                └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4..=7, 3..=6), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌──────────────┐
+        // t:                └──────────────┘
+        assert_eq!(Relation::from_ranges(4..7, 3..6), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=7, 3..=6), EXPECTED);
     }
 
-    mod starts {
-        use super::*;
-
+    #[test]
+    fn starts() {
         const EXPECTED: Option<Relation> = Some(Relation::Starts);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐
-            // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(4..7, 4..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌──────────────┐
+        // t:                     └────────────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(4..7, 4..), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=7, 4..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐
-            // t:                     └───────────────────┘
-            assert_eq!(Relation::from_ranges(4..7, 4..8), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐─ ─ ┐
-            // t:                     └────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(4..=7, 4..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐─ ─ ┐
-            // t:                     └───────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4..=7, 4..=8), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌──────────────┐
+        // t:                     └───────────────────┘
+        assert_eq!(Relation::from_ranges(4..7, 4..8), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=7, 4..=8), EXPECTED);
     }
 
-    mod is_started_by {
-        use super::*;
-
+    #[test]
+    fn is_started_by() {
         const EXPECTED: Option<Relation> = Some(Relation::IsStartedBy);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌────────────────────────── ─ ─
-            // t:                     └──────────────┘
-            assert_eq!(Relation::from_ranges(4.., 4..7), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌────────────────────────── ─ ─
+        // t:                     └──────────────┘
+        assert_eq!(Relation::from_ranges(4.., 4..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(4.., 4..=7), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌───────────────────┐
-            // t:                     └──────────────┘
-            assert_eq!(Relation::from_ranges(4..8, 4..7), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌────────────────────────── ─ ─
-            // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4.., 4..=7), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌───────────────────┐─ ─ ┐
-            // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4..=8, 4..=7), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌───────────────────┐
+        // t:                     └──────────────┘
+        assert_eq!(Relation::from_ranges(4..8, 4..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=8, 4..=7), EXPECTED);
     }
 
-    mod contains {
-        use super::*;
-
+    #[test]
+    fn contains() {
         const EXPECTED: Option<Relation> = Some(Relation::Contains);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌─────────────────────────────── ─ ─
-            // t:                     └─────────┘
-            assert_eq!(Relation::from_ranges(3.., 4..6), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                ┌─────────────────────────────── ─ ─
+        // t:                     └─────────┘
+        assert_eq!(Relation::from_ranges(3.., 4..6), EXPECTED);
+        assert_eq!(Relation::from_ranges(3.., 4..=6), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌───────────────────┐
-            // t:                     └─────────┘
-            assert_eq!(Relation::from_ranges(3..7, 4..6), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌─────────────────────────────── ─ ─
-            // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(3.., 4..=7), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌───────────────────┐─ ─ ┐
-            // t:                     └─────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(3..=7, 4..=6), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                ┌───────────────────┐
+        // t:                     └─────────┘
+        assert_eq!(Relation::from_ranges(3..7, 4..6), EXPECTED);
+        assert_eq!(Relation::from_ranges(3..=7, 4..=6), EXPECTED);
     }
 
-    mod is_contained_by {
-        use super::*;
-
+    #[test]
+    fn is_contained_by() {
         const EXPECTED: Option<Relation> = Some(Relation::IsContainedBy);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌─────────┐
-            // t:                └─────────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(4..6, 3..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌─────────┐
+        // t:                └─────────────────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(4..6, 3..), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=6, 3..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌─────────┐
-            // t:                └───────────────────┘
-            assert_eq!(Relation::from_ranges(4..6, 3..7), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌─────────┐─ ─ ┐
-            // t:                └─────────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(4..=7, 3..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌─────────┐─ ─ ┐
-            // t:                └───────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4..=6, 3..=7), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌─────────┐
+        // t:                └───────────────────┘
+        assert_eq!(Relation::from_ranges(4..6, 3..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=6, 3..=7), EXPECTED);
     }
 
-    mod finishes {
-        use super::*;
-
+    #[test]
+    fn finishes() {
         const EXPECTED: Option<Relation> = Some(Relation::Finishes);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐
-            // t: ─ ─ ───────────────────────────────┘
-            assert_eq!(Relation::from_ranges(4..7, ..7), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌──────────────┐
+        // t: ─ ─ ───────────────────────────────┘
+        assert_eq!(Relation::from_ranges(4..7, ..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=7, ..=7), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐
-            // t:                └───────────────────┘
-            assert_eq!(Relation::from_ranges(4..7, 3..7), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌──────────────┐─ ─ ┐
-            // t: ─ ─ ───────────────────────────────┘
-            assert_eq!(Relation::from_ranges(4..=7, ..=7), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌──────────────┐─ ─ ┐
-            // t:                     └───────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4..=7, 3..=7), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌──────────────┐
+        // t:                └───────────────────┘
+        assert_eq!(Relation::from_ranges(4..7, 3..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=7, 3..=7), EXPECTED);
     }
 
-    mod is_finished_by {
-        use super::*;
-
+    #[test]
+    fn is_finished_by() {
         const EXPECTED: Option<Relation> = Some(Relation::IsFinishedBy);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // t: ─ ─ ───────────────────────────────┐
-            // t:                     └──────────────┘
-            assert_eq!(Relation::from_ranges(..7, 4..7), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // t: ─ ─ ───────────────────────────────┐
+        // t:                     └──────────────┘
+        assert_eq!(Relation::from_ranges(..7, 4..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(..=7, 4..=7), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌───────────────────┐
-            // t:                     └──────────────┘
-            assert_eq!(Relation::from_ranges(3..7, 4..7), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // t: ─ ─ ───────────────────────────────┐─ ─ ┐
-            // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(..=7, 4..=7), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                ┌───────────────────┐─ ─ ┐
-            // t:                     └──────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(3..=7, 4..=7), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                ┌───────────────────┐
+        // t:                     └──────────────┘
+        assert_eq!(Relation::from_ranges(3..7, 4..7), EXPECTED);
+        assert_eq!(Relation::from_ranges(3..=7, 4..=7), EXPECTED);
     }
 
-    mod equals {
-        use super::*;
-
+    #[test]
+    fn equals() {
         const EXPECTED: Option<Relation> = Some(Relation::Equals);
 
-        #[test]
-        fn discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ─────────────────────────────────────────── ─ ─
-            // t: ─ ─ ─────────────────────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(.., ..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s: ─ ─ ─────────────────────────────────────────── ─ ─
+        // t: ─ ─ ─────────────────────────────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(.., ..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(5.., 5..), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                          ┌───────────────────── ─ ─
+        // t:                          └───────────────────── ─ ─
+        assert_eq!(Relation::from_ranges(5.., 5..), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ─────────────────────┐
-            // t: ─ ─ ─────────────────────┘
-            assert_eq!(Relation::from_ranges(..5, ..5), EXPECTED);
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s: ─ ─ ─────────────────────┐
+        // t: ─ ─ ─────────────────────┘
+        assert_eq!(Relation::from_ranges(..5, ..5), EXPECTED);
+        assert_eq!(Relation::from_ranges(..=5, ..=5), EXPECTED);
 
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌─────────┐
-            // t:                     └─────────┘
-            assert_eq!(Relation::from_ranges(4..6, 4..6), EXPECTED);
-        }
-
-        #[test]
-        fn non_discrete() {
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ─────────────────────────────────────────── ─ ─
-            // t: ─ ─ ─────────────────────────────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(.., ..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                          ┌───────────────────── ─ ─
-            // t:                          └───────────────────── ─ ─
-            assert_eq!(Relation::from_ranges(5.., 5..), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s: ─ ─ ─────────────────────┐─ ─ ┐
-            // t: ─ ─ ─────────────────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(..=5, ..=5), EXPECTED);
-
-            //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
-            // s:                     ┌─────────┐─ ─ ┐
-            // t:                     └─────────┘─ ─ ┘
-            assert_eq!(Relation::from_ranges(4..=6, 4..=6), EXPECTED);
-        }
+        //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
+        // s:                     ┌─────────┐
+        // t:                     └─────────┘
+        assert_eq!(Relation::from_ranges(4..6, 4..6), EXPECTED);
+        assert_eq!(Relation::from_ranges(4..=6, 4..=6), EXPECTED);
     }
 }
