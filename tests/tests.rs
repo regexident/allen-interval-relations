@@ -94,24 +94,32 @@ fn precedes() {
     // t:                          └───────────────────── ─ ─
     assert_eq!(Relation::from_ranges(..4, 5..), EXPECTED);
     assert_eq!(Relation::from_ranges(..=4, 5..), EXPECTED);
+    assert!((..4).precedes(&(5..)));
+    assert!((..=4).precedes(&(5..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s: ─ ─ ────────────────┐
     // t:                          └──────────────┘
     assert_eq!(Relation::from_ranges(..4, 5..8), EXPECTED);
     assert_eq!(Relation::from_ranges(..=4, 5..=8), EXPECTED);
+    assert!((..4).precedes(&(5..8)));
+    assert!((..=4).precedes(&(5..=8)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:      ┌──────────────┐
     // t:                          └───────────────────── ─ ─
     assert_eq!(Relation::from_ranges(1..4, 5..), EXPECTED);
     assert_eq!(Relation::from_ranges(1..=4, 5..), EXPECTED);
+    assert!((1..4).precedes(&(5..)));
+    assert!((1..=4).precedes(&(5..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:      ┌──────────────┐
     // t:                          └──────────────┘
     assert_eq!(Relation::from_ranges(1..4, 5..8), EXPECTED);
     assert_eq!(Relation::from_ranges(1..=4, 5..=8), EXPECTED);
+    assert!((1..4).precedes(&(5..8)));
+    assert!((1..=4).precedes(&(5..=8)));
 }
 
 #[test]
@@ -123,24 +131,32 @@ fn is_preceded_by() {
     // t: ─ ─ ────────────────┘
     assert_eq!(Relation::from_ranges(5.., ..4), EXPECTED);
     assert_eq!(Relation::from_ranges(5.., ..=4), EXPECTED);
+    assert!((5..).is_preceded_by(&(..4)));
+    assert!((5..).is_preceded_by(&(..=4)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                          ┌──────────────┐
     // t: ─ ─ ────────────────┘
     assert_eq!(Relation::from_ranges(5..8, ..4), EXPECTED);
     assert_eq!(Relation::from_ranges(5..=8, ..=4), EXPECTED);
+    assert!((5..8).is_preceded_by(&(..4)));
+    assert!((5..=8).is_preceded_by(&(..=4)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                          ┌───────────────────── ─ ─
     // t:      └──────────────┘
     assert_eq!(Relation::from_ranges(5.., 1..4), EXPECTED);
     assert_eq!(Relation::from_ranges(5.., 1..=4), EXPECTED);
+    assert!((5..).is_preceded_by(&(1..4)));
+    assert!((5..).is_preceded_by(&(1..=4)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                          ┌──────────────┐
     // t:      └──────────────┘
     assert_eq!(Relation::from_ranges(5.., 1..4), EXPECTED);
     assert_eq!(Relation::from_ranges(5.., 1..=4), EXPECTED);
+    assert!((5..8).is_preceded_by(&(1..4)));
+    assert!((5..=8).is_preceded_by(&(1..=4)));
 }
 
 #[test]
@@ -152,24 +168,32 @@ fn meets() {
     // t:                          └───────────────────── ─ ─
     assert_eq!(Relation::from_ranges(..5, 5..), EXPECTED);
     assert_eq!(Relation::from_ranges(..5, 5..), EXPECTED);
+    assert!((..5).meets(&(5..)));
+    assert!((..=5).meets(&(5..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s: ─ ─ ─────────────────────┐
     // t:                          └──────────────┘
     assert_eq!(Relation::from_ranges(..5, 5..8), EXPECTED);
     assert_eq!(Relation::from_ranges(..5, 5..8), EXPECTED);
+    assert!((..5).meets(&(5..8)));
+    assert!((..=5).meets(&(5..=8)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:           ┌──────────────┐
     // t:                          └───────────────────── ─ ─
     assert_eq!(Relation::from_ranges(2..5, 5..), EXPECTED);
     assert_eq!(Relation::from_ranges(2..5, 5..), EXPECTED);
+    assert!((2..5).meets(&(5..)));
+    assert!((2..=5).meets(&(5..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:           ┌──────────────┐
     // t:                          └──────────────┘
     assert_eq!(Relation::from_ranges(2..5, 5..8), EXPECTED);
     assert_eq!(Relation::from_ranges(2..5, 5..8), EXPECTED);
+    assert!((2..5).meets(&(5..8)));
+    assert!((2..=5).meets(&(5..=8)));
 }
 
 #[test]
@@ -181,24 +205,32 @@ fn is_met_by() {
     // t: ─ ─ ─────────────────────┘
     assert_eq!(Relation::from_ranges(5.., ..5), EXPECTED);
     assert_eq!(Relation::from_ranges(5.., ..=5), EXPECTED);
+    assert!((5..).is_met_by(&(..5)));
+    assert!((5..).is_met_by(&(..=5)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                          ┌──────────────┐
     // t: ─ ─ ─────────────────────┘
     assert_eq!(Relation::from_ranges(5..8, ..5), EXPECTED);
     assert_eq!(Relation::from_ranges(5..=8, ..=5), EXPECTED);
+    assert!((5..8).is_met_by(&(..5)));
+    assert!((5..=8).is_met_by(&(..=5)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                          ┌───────────────────── ─ ─
     // t:           └──────────────┘
     assert_eq!(Relation::from_ranges(5.., 2..5), EXPECTED);
     assert_eq!(Relation::from_ranges(5.., 2..=5), EXPECTED);
+    assert!((5..).is_met_by(&(2..5)));
+    assert!((5..).is_met_by(&(2..=5)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                          ┌──────────────┐
     // t:           └──────────────┘
     assert_eq!(Relation::from_ranges(5..8, 2..5), EXPECTED);
     assert_eq!(Relation::from_ranges(5..=8, 2..=5), EXPECTED);
+    assert!((5..8).is_met_by(&(2..5)));
+    assert!((5..=8).is_met_by(&(2..=5)));
 }
 
 #[test]
@@ -210,24 +242,32 @@ fn overlaps() {
     // t:                     └────────────────────────── ─ ─
     assert_eq!(Relation::from_ranges(..6, 4..), EXPECTED);
     assert_eq!(Relation::from_ranges(..=6, 4..), EXPECTED);
+    assert!((..6).overlaps(&(4..)));
+    assert!((..=6).overlaps(&(4..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s: ─ ─ ──────────────────────────┐
     // t:                     └──────────────┘
     assert_eq!(Relation::from_ranges(..6, 4..7), EXPECTED);
     assert_eq!(Relation::from_ranges(..=6, 4..=7), EXPECTED);
+    assert!((..6).overlaps(&(4..7)));
+    assert!((..=6).overlaps(&(4..=7)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                ┌──────────────┐
     // t:                     └────────────────────────── ─ ─
     assert_eq!(Relation::from_ranges(3..6, 4..), EXPECTED);
     assert_eq!(Relation::from_ranges(3..=6, 4..), EXPECTED);
+    assert!((3..6).overlaps(&(4..)));
+    assert!((3..=6).overlaps(&(4..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                ┌──────────────┐
     // t:                     └──────────────┘
     assert_eq!(Relation::from_ranges(3..6, 4..7), EXPECTED);
     assert_eq!(Relation::from_ranges(3..=6, 4..=7), EXPECTED);
+    assert!((3..6).overlaps(&(4..7)));
+    assert!((3..=6).overlaps(&(4..=7)));
 }
 
 #[test]
@@ -239,24 +279,32 @@ fn is_overlapped_by() {
     // t: ─ ─ ──────────────────────────┘
     assert_eq!(Relation::from_ranges(4.., ..6), EXPECTED);
     assert_eq!(Relation::from_ranges(4.., ..=6), EXPECTED);
+    assert!((4..).is_overlapped_by(&(..6)));
+    assert!((4..).is_overlapped_by(&(..=6)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                     ┌──────────────┐
     // t: ─ ─ ──────────────────────────┘
     assert_eq!(Relation::from_ranges(4..7, ..6), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=7, ..=6), EXPECTED);
+    assert!((4..7).is_overlapped_by(&(..6)));
+    assert!((4..=7).is_overlapped_by(&(..=6)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                     ┌────────────────────────── ─ ─
     // t:                └──────────────┘
     assert_eq!(Relation::from_ranges(4.., 3..6), EXPECTED);
     assert_eq!(Relation::from_ranges(4.., 3..=6), EXPECTED);
+    assert!((4..).is_overlapped_by(&(3..6)));
+    assert!((4..).is_overlapped_by(&(3..=6)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                     ┌──────────────┐
     // t:                └──────────────┘
     assert_eq!(Relation::from_ranges(4..7, 3..6), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=7, 3..=6), EXPECTED);
+    assert!((4..7).is_overlapped_by(&(3..6)));
+    assert!((4..=7).is_overlapped_by(&(3..=6)));
 }
 
 #[test]
@@ -268,12 +316,16 @@ fn starts() {
     // t:                     └────────────────────────── ─ ─
     assert_eq!(Relation::from_ranges(4..7, 4..), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=7, 4..), EXPECTED);
+    assert!((4..7).starts(&(4..)));
+    assert!((4..=7).starts(&(4..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                     ┌──────────────┐
     // t:                     └───────────────────┘
     assert_eq!(Relation::from_ranges(4..7, 4..8), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=7, 4..=8), EXPECTED);
+    assert!((4..7).starts(&(4..8)));
+    assert!((4..=7).starts(&(4..=8)));
 }
 
 #[test]
@@ -285,12 +337,16 @@ fn is_started_by() {
     // t:                     └──────────────┘
     assert_eq!(Relation::from_ranges(4.., 4..7), EXPECTED);
     assert_eq!(Relation::from_ranges(4.., 4..=7), EXPECTED);
+    assert!((4..).is_started_by(&(4..7)));
+    assert!((4..).is_started_by(&(4..=7)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                     ┌───────────────────┐
     // t:                     └──────────────┘
     assert_eq!(Relation::from_ranges(4..8, 4..7), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=8, 4..=7), EXPECTED);
+    assert!((4..8).is_started_by(&(4..7)));
+    assert!((4..=8).is_started_by(&(4..=7)));
 }
 
 #[test]
@@ -302,12 +358,16 @@ fn encloses() {
     // t:                     └─────────┘
     assert_eq!(Relation::from_ranges(3.., 4..6), EXPECTED);
     assert_eq!(Relation::from_ranges(3.., 4..=6), EXPECTED);
+    assert!((3..).encloses(&(4..6)));
+    assert!((3..).encloses(&(4..=6)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                ┌───────────────────┐
     // t:                     └─────────┘
     assert_eq!(Relation::from_ranges(3..7, 4..6), EXPECTED);
     assert_eq!(Relation::from_ranges(3..=7, 4..=6), EXPECTED);
+    assert!((3..7).encloses(&(4..6)));
+    assert!((3..=7).encloses(&(4..=6)));
 }
 
 #[test]
@@ -319,12 +379,16 @@ fn is_enclosed_by() {
     // t:                └─────────────────────────────── ─ ─
     assert_eq!(Relation::from_ranges(4..6, 3..), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=6, 3..), EXPECTED);
+    assert!((4..6).is_enclosed_by(&(3..)));
+    assert!((4..=6).is_enclosed_by(&(3..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                     ┌─────────┐
     // t:                └───────────────────┘
     assert_eq!(Relation::from_ranges(4..6, 3..7), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=6, 3..=7), EXPECTED);
+    assert!((4..6).is_enclosed_by(&(3..7)));
+    assert!((4..=6).is_enclosed_by(&(3..=7)));
 }
 
 #[test]
@@ -336,12 +400,16 @@ fn finishes() {
     // t: ─ ─ ───────────────────────────────┘
     assert_eq!(Relation::from_ranges(4..7, ..7), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=7, ..=7), EXPECTED);
+    assert!((4..7).finishes(&(..7)));
+    assert!((4..=7).finishes(&(..=7)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                     ┌──────────────┐
     // t:                └───────────────────┘
     assert_eq!(Relation::from_ranges(4..7, 3..7), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=7, 3..=7), EXPECTED);
+    assert!((4..7).finishes(&(3..7)));
+    assert!((4..=7).finishes(&(3..=7)));
 }
 
 #[test]
@@ -353,12 +421,16 @@ fn is_finished_by() {
     // t:                     └──────────────┘
     assert_eq!(Relation::from_ranges(..7, 4..7), EXPECTED);
     assert_eq!(Relation::from_ranges(..=7, 4..=7), EXPECTED);
+    assert!((..7).is_finished_by(&(4..7)));
+    assert!((..=7).is_finished_by(&(4..=7)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                ┌───────────────────┐
     // t:                     └──────────────┘
     assert_eq!(Relation::from_ranges(3..7, 4..7), EXPECTED);
     assert_eq!(Relation::from_ranges(3..=7, 4..=7), EXPECTED);
+    assert!((3..7).is_finished_by(&(4..7)));
+    assert!((3..=7).is_finished_by(&(4..=7)));
 }
 
 #[test]
@@ -369,21 +441,27 @@ fn equals() {
     // s: ─ ─ ─────────────────────────────────────────── ─ ─
     // t: ─ ─ ─────────────────────────────────────────── ─ ─
     assert_eq!(Relation::from_ranges(.., ..), EXPECTED);
+    // assert!((..).equals(&(..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                          ┌───────────────────── ─ ─
     // t:                          └───────────────────── ─ ─
     assert_eq!(Relation::from_ranges(5.., 5..), EXPECTED);
+    assert!((5..).equals(&(5..)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s: ─ ─ ─────────────────────┐
     // t: ─ ─ ─────────────────────┘
     assert_eq!(Relation::from_ranges(..5, ..5), EXPECTED);
     assert_eq!(Relation::from_ranges(..=5, ..=5), EXPECTED);
+    assert!((..5).equals(&(..5)));
+    assert!((..=5).equals(&(..=5)));
 
     //    | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 |
     // s:                     ┌─────────┐
     // t:                     └─────────┘
     assert_eq!(Relation::from_ranges(4..6, 4..6), EXPECTED);
     assert_eq!(Relation::from_ranges(4..=6, 4..=6), EXPECTED);
+    assert!((4..5).equals(&(4..5)));
+    assert!((4..=5).equals(&(4..=5)));
 }

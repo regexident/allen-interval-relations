@@ -60,7 +60,10 @@ extern crate std;
 mod atomic_relations;
 mod bounded;
 mod from_ranges;
+mod range_relations;
 mod relation;
 mod validator;
 
-pub use self::{atomic_relations::*, bounded::*, from_ranges::*, relation::*, validator::*};
+pub use self::{
+    atomic_relations::*, bounded::*, from_ranges::*, range_relations::*, relation::*, validator::*,
+};
