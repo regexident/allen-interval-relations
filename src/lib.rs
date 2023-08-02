@@ -61,5 +61,6 @@ mod atomic_relations;
 mod bounded;
 mod from_ranges;
 mod relation;
+mod validator;
 
-pub use self::{atomic_relations::*, bounded::*, from_ranges::*, relation::*};
+pub use self::{atomic_relations::*, bounded::*, from_ranges::*, relation::*, validator::*};
