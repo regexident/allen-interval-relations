@@ -2,7 +2,7 @@ use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToIncl
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use allen_interval_relations::{AtomicRelations, FromRanges, Relation};
+use allen_interval_relations::{AtomicRelations, FromRanges, IntervalError, Relation};
 
 type DiscreteValue = i32;
 type NonDiscreteValue = i32;
@@ -56,7 +56,7 @@ where
 
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("Discrete atomic relations", |b| {
-        fn function<S, T>(s: S, t: T) -> Option<AtomicRelations>
+        fn function<S, T>(s: S, t: T) -> Result<AtomicRelations, IntervalError>
         where
             AtomicRelations: FromRanges<S, T>,
         {
@@ -89,7 +89,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("Non-discrete atomic relations", |b| {
-        fn function<S, T>(s: S, t: T) -> Option<AtomicRelations>
+        fn function<S, T>(s: S, t: T) -> Result<AtomicRelations, IntervalError>
         where
             AtomicRelations: FromRanges<S, T>,
         {
@@ -122,7 +122,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("Discrete relation", |b| {
-        fn function<S, T>(s: S, t: T) -> Option<Relation>
+        fn function<S, T>(s: S, t: T) -> Result<Relation, IntervalError>
         where
             Relation: FromRanges<S, T>,
         {
@@ -155,7 +155,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("Non-discrete relation", |b| {
-        fn function<S, T>(s: S, t: T) -> Option<Relation>
+        fn function<S, T>(s: S, t: T) -> Result<Relation, IntervalError>
         where
             Relation: FromRanges<S, T>,
         {

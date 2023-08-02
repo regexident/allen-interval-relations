@@ -3,7 +3,7 @@ use std::{
     ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
 };
 
-use crate::{from_ranges::FromRanges, Bounded};
+use crate::{from_ranges::FromRanges, Bounded, IntervalError, IntervalValidator, ValidateInterval};
 
 /// A type describing the possible atomic relations between two intervals (e.g. `s` and `t`).
 ///
@@ -48,6 +48,7 @@ use crate::{from_ranges::FromRanges, Bounded};
 /// - `BB0`, `BE0`, `EB0`, `EE0` => `Ordering::Equal`
 /// - `BB-1`, `BE-1`, `EB-1`, `EE-1` => `Ordering::Greater`
 ///
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub struct AtomicRelations {
     pub(crate) bb: Ordering,
     pub(crate) be: Ordering,
@@ -56,6 +57,35 @@ pub struct AtomicRelations {
 }
 
 impl AtomicRelations {
+    fn new<T>(s: (&T, &T), t: (&T, &T)) -> Result<Self, IntervalError>
+    where
+        T: PartialOrd<T> + Bounded,
+    {
+        let (s_start, s_end) = s;
+        let (t_start, t_end) = t;
+
+        // Check for empty ranges:
+
+        if (s_start >= s_end) || (t_start >= t_end) {
+            return Err(IntervalError::EmptyInterval);
+        }
+
+        let Some(bb) = s_start.partial_cmp(t_start) else {
+            return Err(IntervalError::AmbiguousOrder);
+        };
+        let Some(be) = s_start.partial_cmp(t_end) else {
+            return Err(IntervalError::AmbiguousOrder);
+        };
+        let Some(eb) = s_end.partial_cmp(t_start) else {
+            return Err(IntervalError::AmbiguousOrder);
+        };
+        let Some(ee) = s_end.partial_cmp(t_end) else {
+            return Err(IntervalError::AmbiguousOrder);
+        };
+
+        Ok(Self { bb, be, eb, ee })
+    }
+
     /// Returns the ordering between `s`'s start bound and `t`'s start bound.
     #[inline]
     pub fn bb(&self) -> Ordering {
@@ -85,10 +115,13 @@ impl AtomicRelations {
 
 impl FromRanges<RangeFull, RangeFull> for AtomicRelations {
     #[inline]
-    fn from_ranges(s: RangeFull, t: RangeFull) -> Option<Self> {
+    fn from_ranges(s: RangeFull, t: RangeFull) -> Result<Self, IntervalError> {
         debug_assert_eq!(s, t);
 
-        Some(Self {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
+
+        Ok(Self {
             bb: Ordering::Equal,
             be: Ordering::Less,
             eb: Ordering::Greater,
@@ -102,13 +135,14 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(_s: RangeFull, t: RangeTo<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&T::min_value())?;
-        let be = T::min_value().partial_cmp(&t.end)?;
-        let eb = T::max_value().partial_cmp(&T::min_value())?;
-        let ee = T::max_value().partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeFull, t: RangeTo<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new(
+            (&T::min_value(), &T::max_value()),
+            (&T::min_value(), &t.end),
+        )
     }
 }
 
@@ -117,13 +151,14 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(_s: RangeFull, t: RangeToInclusive<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&T::min_value())?;
-        let be = T::min_value().partial_cmp(&t.end)?;
-        let eb = T::max_value().partial_cmp(&T::min_value())?;
-        let ee = T::max_value().partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeFull, t: RangeToInclusive<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new(
+            (&T::min_value(), &T::max_value()),
+            (&T::min_value(), &t.end),
+        )
     }
 }
 
@@ -132,13 +167,14 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(_s: RangeFull, t: RangeFrom<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&t.start)?;
-        let be = T::min_value().partial_cmp(&T::max_value())?;
-        let eb = T::max_value().partial_cmp(&t.start)?;
-        let ee = T::max_value().partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeFull, t: RangeFrom<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new(
+            (&T::min_value(), &T::max_value()),
+            (&t.start, &T::max_value()),
+        )
     }
 }
 
@@ -147,13 +183,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(_s: RangeFull, t: Range<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&t.start)?;
-        let be = T::min_value().partial_cmp(&t.end)?;
-        let eb = T::max_value().partial_cmp(&t.start)?;
-        let ee = T::max_value().partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeFull, t: Range<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&T::min_value(), &T::max_value()), (&t.start, &t.end))
     }
 }
 
@@ -162,13 +196,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(_s: RangeFull, t: RangeInclusive<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(t.start())?;
-        let be = T::min_value().partial_cmp(t.end())?;
-        let eb = T::max_value().partial_cmp(t.start())?;
-        let ee = T::max_value().partial_cmp(t.end())?;
+    fn from_ranges(s: RangeFull, t: RangeInclusive<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&T::min_value(), &T::max_value()), (t.start(), t.end()))
     }
 }
 
@@ -179,13 +211,14 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeTo<T>, _t: RangeFull) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&T::min_value())?;
-        let be = T::min_value().partial_cmp(&T::max_value())?;
-        let eb = s.end.partial_cmp(&T::min_value())?;
-        let ee = s.end.partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeTo<T>, t: RangeFull) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new(
+            (&T::min_value(), &s.end),
+            (&T::min_value(), &T::max_value()),
+        )
     }
 }
 
@@ -194,13 +227,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeTo<T>, t: RangeTo<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&T::min_value())?;
-        let be = T::min_value().partial_cmp(&t.end)?;
-        let eb = s.end.partial_cmp(&T::min_value())?;
-        let ee = s.end.partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeTo<T>, t: RangeTo<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&T::min_value(), &s.end), (&T::min_value(), &t.end))
     }
 }
 
@@ -211,13 +242,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeTo<T>, t: RangeFrom<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&t.start)?;
-        let be = T::min_value().partial_cmp(&T::max_value())?;
-        let eb = s.end.partial_cmp(&t.start)?;
-        let ee = s.end.partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeTo<T>, t: RangeFrom<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&T::min_value(), &s.end), (&t.start, &T::max_value()))
     }
 }
 
@@ -226,13 +255,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeTo<T>, t: Range<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&t.start)?;
-        let be = T::min_value().partial_cmp(&t.end)?;
-        let eb = s.end.partial_cmp(&t.start)?;
-        let ee = s.end.partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeTo<T>, t: Range<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&T::min_value(), &s.end), (&t.start, &t.end))
     }
 }
 
@@ -245,13 +272,14 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeToInclusive<T>, _t: RangeFull) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&T::min_value())?;
-        let be = T::min_value().partial_cmp(&T::max_value())?;
-        let eb = s.end.partial_cmp(&T::min_value())?;
-        let ee = s.end.partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeToInclusive<T>, t: RangeFull) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new(
+            (&T::min_value(), &s.end),
+            (&T::min_value(), &T::max_value()),
+        )
     }
 }
 
@@ -262,13 +290,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeToInclusive<T>, t: RangeToInclusive<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&T::min_value())?;
-        let be = T::min_value().partial_cmp(&t.end)?;
-        let eb = s.end.partial_cmp(&T::min_value())?;
-        let ee = s.end.partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeToInclusive<T>, t: RangeToInclusive<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&T::min_value(), &s.end), (&T::min_value(), &t.end))
     }
 }
 
@@ -277,13 +303,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeToInclusive<T>, t: RangeFrom<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(&t.start)?;
-        let be = T::min_value().partial_cmp(&T::max_value())?;
-        let eb = s.end.partial_cmp(&t.start)?;
-        let ee = s.end.partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeToInclusive<T>, t: RangeFrom<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&T::min_value(), &s.end), (&t.start, &T::max_value()))
     }
 }
 
@@ -294,13 +318,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeToInclusive<T>, t: RangeInclusive<T>) -> Option<Self> {
-        let bb = T::min_value().partial_cmp(t.start())?;
-        let be = T::min_value().partial_cmp(t.end())?;
-        let eb = s.end.partial_cmp(t.start())?;
-        let ee = s.end.partial_cmp(t.end())?;
+    fn from_ranges(s: RangeToInclusive<T>, t: RangeInclusive<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&T::min_value(), &s.end), (t.start(), t.end()))
     }
 }
 
@@ -311,13 +333,14 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeFrom<T>, _t: RangeFull) -> Option<Self> {
-        let bb = s.start.partial_cmp(&T::min_value())?;
-        let be = s.start.partial_cmp(&T::max_value())?;
-        let eb = T::max_value().partial_cmp(&T::min_value())?;
-        let ee = T::max_value().partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeFrom<T>, t: RangeFull) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new(
+            (&s.start, &T::max_value()),
+            (&T::min_value(), &T::max_value()),
+        )
     }
 }
 
@@ -326,13 +349,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeFrom<T>, t: RangeTo<T>) -> Option<Self> {
-        let bb = s.start.partial_cmp(&T::min_value())?;
-        let be = s.start.partial_cmp(&t.end)?;
-        let eb = T::max_value().partial_cmp(&T::min_value())?;
-        let ee = T::max_value().partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeFrom<T>, t: RangeTo<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &T::max_value()), (&T::min_value(), &t.end))
     }
 }
 
@@ -341,13 +362,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeFrom<T>, t: RangeToInclusive<T>) -> Option<Self> {
-        let bb = s.start.partial_cmp(&T::min_value())?;
-        let be = s.start.partial_cmp(&t.end)?;
-        let eb = T::max_value().partial_cmp(&T::min_value())?;
-        let ee = T::max_value().partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeFrom<T>, t: RangeToInclusive<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &T::max_value()), (&T::min_value(), &t.end))
     }
 }
 
@@ -356,13 +375,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeFrom<T>, t: RangeFrom<T>) -> Option<Self> {
-        let bb = s.start.partial_cmp(&t.start)?;
-        let be = s.start.partial_cmp(&T::max_value())?;
-        let eb = T::max_value().partial_cmp(&t.start)?;
-        let ee = T::max_value().partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeFrom<T>, t: RangeFrom<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &T::max_value()), (&t.start, &T::max_value()))
     }
 }
 
@@ -371,13 +388,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeFrom<T>, t: Range<T>) -> Option<Self> {
-        let bb = s.start.partial_cmp(&t.start)?;
-        let be = s.start.partial_cmp(&t.end)?;
-        let eb = T::max_value().partial_cmp(&t.start)?;
-        let ee = T::max_value().partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeFrom<T>, t: Range<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &T::max_value()), (&t.start, &t.end))
     }
 }
 
@@ -386,13 +401,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeFrom<T>, t: RangeInclusive<T>) -> Option<Self> {
-        let bb = s.start.partial_cmp(t.start())?;
-        let be = s.start.partial_cmp(t.end())?;
-        let eb = T::max_value().partial_cmp(t.start())?;
-        let ee = T::max_value().partial_cmp(t.end())?;
+    fn from_ranges(s: RangeFrom<T>, t: RangeInclusive<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &T::max_value()), (t.start(), t.end()))
     }
 }
 
@@ -403,13 +416,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: Range<T>, _t: RangeFull) -> Option<Self> {
-        let bb = s.start.partial_cmp(&T::min_value())?;
-        let be = s.start.partial_cmp(&T::max_value())?;
-        let eb = s.end.partial_cmp(&T::min_value())?;
-        let ee = s.end.partial_cmp(&T::max_value())?;
+    fn from_ranges(s: Range<T>, t: RangeFull) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &s.end), (&T::min_value(), &T::max_value()))
     }
 }
 
@@ -418,13 +429,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: Range<T>, t: RangeTo<T>) -> Option<Self> {
-        let bb = s.start.partial_cmp(&T::min_value())?;
-        let be = s.start.partial_cmp(&t.end)?;
-        let eb = s.end.partial_cmp(&T::min_value())?;
-        let ee = s.end.partial_cmp(&t.end)?;
+    fn from_ranges(s: Range<T>, t: RangeTo<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &s.end), (&T::min_value(), &t.end))
     }
 }
 
@@ -435,13 +444,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: Range<T>, t: RangeFrom<T>) -> Option<Self> {
-        let bb = s.start.partial_cmp(&t.start)?;
-        let be = s.start.partial_cmp(&T::max_value())?;
-        let eb = s.end.partial_cmp(&t.start)?;
-        let ee = s.end.partial_cmp(&T::max_value())?;
+    fn from_ranges(s: Range<T>, t: RangeFrom<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &s.end), (&t.start, &T::max_value()))
     }
 }
 
@@ -450,13 +457,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: Range<T>, t: Range<T>) -> Option<Self> {
-        let bb = s.start.partial_cmp(&t.start)?;
-        let be = s.start.partial_cmp(&t.end)?;
-        let eb = s.end.partial_cmp(&t.start)?;
-        let ee = s.end.partial_cmp(&t.end)?;
+    fn from_ranges(s: Range<T>, t: Range<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((&s.start, &s.end), (&t.start, &t.end))
     }
 }
 
@@ -469,13 +474,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeInclusive<T>, _t: RangeFull) -> Option<Self> {
-        let bb = s.start().partial_cmp(&T::min_value())?;
-        let be = s.start().partial_cmp(&T::max_value())?;
-        let eb = s.end().partial_cmp(&T::min_value())?;
-        let ee = s.end().partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeInclusive<T>, t: RangeFull) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((s.start(), s.end()), (&T::min_value(), &T::max_value()))
     }
 }
 
@@ -486,13 +489,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeInclusive<T>, t: RangeToInclusive<T>) -> Option<Self> {
-        let bb = s.start().partial_cmp(&T::min_value())?;
-        let be = s.start().partial_cmp(&t.end)?;
-        let eb = s.end().partial_cmp(&T::min_value())?;
-        let ee = s.end().partial_cmp(&t.end)?;
+    fn from_ranges(s: RangeInclusive<T>, t: RangeToInclusive<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((s.start(), s.end()), (&T::min_value(), &t.end))
     }
 }
 
@@ -501,13 +502,11 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeInclusive<T>, t: RangeFrom<T>) -> Option<Self> {
-        let bb = s.start().partial_cmp(&t.start)?;
-        let be = s.start().partial_cmp(&T::max_value())?;
-        let eb = s.end().partial_cmp(&t.start)?;
-        let ee = s.end().partial_cmp(&T::max_value())?;
+    fn from_ranges(s: RangeInclusive<T>, t: RangeFrom<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((s.start(), s.end()), (&t.start, &T::max_value()))
     }
 }
 
@@ -518,12 +517,10 @@ where
     T: PartialOrd<T> + Bounded,
 {
     #[inline]
-    fn from_ranges(s: RangeInclusive<T>, t: RangeInclusive<T>) -> Option<Self> {
-        let bb = s.start().partial_cmp(t.start())?;
-        let be = s.start().partial_cmp(t.end())?;
-        let eb = s.end().partial_cmp(t.start())?;
-        let ee = s.end().partial_cmp(t.end())?;
+    fn from_ranges(s: RangeInclusive<T>, t: RangeInclusive<T>) -> Result<Self, IntervalError> {
+        IntervalValidator.validate_interval(&s).unwrap();
+        IntervalValidator.validate_interval(&t).unwrap();
 
-        Some(Self { bb, be, eb, ee })
+        Self::new((s.start(), s.end()), (t.start(), t.end()))
     }
 }
