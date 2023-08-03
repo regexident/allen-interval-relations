@@ -1,52 +1,48 @@
-use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
-
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use allen_interval_relations::{AtomicRelations, FromRanges, IntervalError, Relation};
-
-type DiscreteValue = i32;
-type NonDiscreteValue = i32;
-
-#[inline]
-fn with_ranges_discrete<F>(f: F)
-where
-    F: Fn(&RangeFull, &RangeFrom<DiscreteValue>, &RangeTo<DiscreteValue>, &Range<DiscreteValue>),
-{
-    for range_full in &[..] {
-        for range_from in &[0.., 1.., 2.., 3.., 4.., 5..] {
-            for range_to in &[..1, ..2, ..3, ..4, ..5, ..6] {
-                for range in &[0..1, 1..2, 2..3, 3..4, 4..5] {
-                    black_box(f(
-                        black_box(range_full),
-                        black_box(range_from),
-                        black_box(range_to),
-                        black_box(range),
-                    ));
-                }
-            }
-        }
-    }
-}
+use allen_interval_relations::{
+    FromIntervals, Interval, IntervalFrom, IntervalFull, IntervalTo, NonEmpty, Relation,
+};
 
 #[inline]
-fn with_ranges_non_discrete<F>(f: F)
+fn with_intervals<F>(f: F)
 where
     F: Fn(
-        &RangeFull,
-        &RangeFrom<NonDiscreteValue>,
-        &RangeToInclusive<NonDiscreteValue>,
-        &RangeInclusive<NonDiscreteValue>,
+        &NonEmpty<IntervalFull>,
+        &NonEmpty<IntervalFrom<i32>>,
+        &NonEmpty<IntervalTo<i32>>,
+        &NonEmpty<Interval<i32>>,
     ),
 {
-    for range_full in &[..] {
-        for range_from in &[0.., 1.., 2.., 3.., 4.., 5..] {
-            for range_to in &[..=1, ..=2, ..=3, ..=4, ..=5, ..=6] {
-                for range in &[0..=1, 1..=2, 2..=3, 3..=4, 4..=5] {
+    for interval_full in &[IntervalFull] {
+        for interval_from in &[
+            IntervalFrom { start: 0 },
+            IntervalFrom { start: 1 },
+            IntervalFrom { start: 2 },
+            IntervalFrom { start: 3 },
+            IntervalFrom { start: 4 },
+            IntervalFrom { start: 5 },
+        ] {
+            for interval_to in &[
+                IntervalTo { end: 1 },
+                IntervalTo { end: 2 },
+                IntervalTo { end: 3 },
+                IntervalTo { end: 4 },
+                IntervalTo { end: 5 },
+                IntervalTo { end: 6 },
+            ] {
+                for interval in &[
+                    Interval { start: 0, end: 1 },
+                    Interval { start: 1, end: 2 },
+                    Interval { start: 2, end: 3 },
+                    Interval { start: 3, end: 4 },
+                    Interval { start: 4, end: 5 },
+                ] {
                     black_box(f(
-                        black_box(range_full),
-                        black_box(range_from),
-                        black_box(range_to),
-                        black_box(range),
+                        black_box(unsafe { &NonEmpty::new_unchecked(interval_full.clone()) }),
+                        black_box(unsafe { &NonEmpty::new_unchecked(interval_from.clone()) }),
+                        black_box(unsafe { &NonEmpty::new_unchecked(interval_to.clone()) }),
+                        black_box(unsafe { &NonEmpty::new_unchecked(interval.clone()) }),
                     ));
                 }
             }
@@ -55,134 +51,28 @@ where
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("Discrete atomic relations", |b| {
-        fn function<S, T>(s: S, t: T) -> Result<AtomicRelations, IntervalError>
-        where
-            AtomicRelations: FromRanges<S, T>,
-        {
-            AtomicRelations::from_ranges(s, t)
-        }
-
+    c.bench_function("Relation", |b| {
         b.iter(|| {
-            with_ranges_discrete(|range_from, range_full, range, range_to| {
-                function(range_from.clone(), range_from.clone());
-                function(range_from.clone(), range_full.clone());
-                function(range_from.clone(), range.clone());
-                function(range_from.clone(), range_to.clone());
+            with_intervals(|interval_from, interval_full, interval, interval_to| {
+                Relation::from_intervals(interval_from, interval_from);
+                Relation::from_intervals(interval_from, interval_full);
+                Relation::from_intervals(interval_from, interval);
+                Relation::from_intervals(interval_from, interval_to);
 
-                function(range_full.clone(), range_from.clone());
-                function(range_full.clone(), range_full.clone());
-                function(range_full.clone(), range.clone());
-                function(range_full.clone(), range_to.clone());
+                Relation::from_intervals(interval_full, interval_from);
+                Relation::from_intervals(interval_full, interval_full);
+                Relation::from_intervals(interval_full, interval);
+                Relation::from_intervals(interval_full, interval_to);
 
-                function(range.clone(), range_from.clone());
-                function(range.clone(), range_full.clone());
-                function(range.clone(), range.clone());
-                function(range.clone(), range_to.clone());
+                Relation::from_intervals(interval, interval_from);
+                Relation::from_intervals(interval, interval_full);
+                Relation::from_intervals(interval, interval);
+                Relation::from_intervals(interval, interval_to);
 
-                function(range_to.clone(), range_from.clone());
-                function(range_to.clone(), range_full.clone());
-                function(range_to.clone(), range.clone());
-                function(range_to.clone(), range_to.clone());
-            });
-        })
-    });
-
-    c.bench_function("Non-discrete atomic relations", |b| {
-        fn function<S, T>(s: S, t: T) -> Result<AtomicRelations, IntervalError>
-        where
-            AtomicRelations: FromRanges<S, T>,
-        {
-            AtomicRelations::from_ranges(s, t)
-        }
-
-        b.iter(|| {
-            with_ranges_non_discrete(|range_from, range_full, range, range_to| {
-                function(range_from.clone(), range_from.clone());
-                function(range_from.clone(), range_full.clone());
-                function(range_from.clone(), range.clone());
-                function(range_from.clone(), range_to.clone());
-
-                function(range_full.clone(), range_from.clone());
-                function(range_full.clone(), range_full.clone());
-                function(range_full.clone(), range.clone());
-                function(range_full.clone(), range_to.clone());
-
-                function(range.clone(), range_from.clone());
-                function(range.clone(), range_full.clone());
-                function(range.clone(), range.clone());
-                function(range.clone(), range_to.clone());
-
-                function(range_to.clone(), range_from.clone());
-                function(range_to.clone(), range_full.clone());
-                function(range_to.clone(), range.clone());
-                function(range_to.clone(), range_to.clone());
-            });
-        })
-    });
-
-    c.bench_function("Discrete relation", |b| {
-        fn function<S, T>(s: S, t: T) -> Result<Relation, IntervalError>
-        where
-            Relation: FromRanges<S, T>,
-        {
-            Relation::from_ranges(s, t)
-        }
-
-        b.iter(|| {
-            with_ranges_discrete(|range_from, range_full, range, range_to| {
-                function(range_from.clone(), range_from.clone());
-                function(range_from.clone(), range_full.clone());
-                function(range_from.clone(), range.clone());
-                function(range_from.clone(), range_to.clone());
-
-                function(range_full.clone(), range_from.clone());
-                function(range_full.clone(), range_full.clone());
-                function(range_full.clone(), range.clone());
-                function(range_full.clone(), range_to.clone());
-
-                function(range.clone(), range_from.clone());
-                function(range.clone(), range_full.clone());
-                function(range.clone(), range.clone());
-                function(range.clone(), range_to.clone());
-
-                function(range_to.clone(), range_from.clone());
-                function(range_to.clone(), range_full.clone());
-                function(range_to.clone(), range.clone());
-                function(range_to.clone(), range_to.clone());
-            });
-        })
-    });
-
-    c.bench_function("Non-discrete relation", |b| {
-        fn function<S, T>(s: S, t: T) -> Result<Relation, IntervalError>
-        where
-            Relation: FromRanges<S, T>,
-        {
-            Relation::from_ranges(s, t)
-        }
-
-        b.iter(|| {
-            with_ranges_non_discrete(|range_from, range_full, range, range_to| {
-                function(range_from.clone(), range_from.clone());
-                function(range_from.clone(), range_full.clone());
-                function(range_from.clone(), range.clone());
-                function(range_from.clone(), range_to.clone());
-
-                function(range_full.clone(), range_from.clone());
-                function(range_full.clone(), range_full.clone());
-                function(range_full.clone(), range.clone());
-                function(range_full.clone(), range_to.clone());
-
-                function(range.clone(), range_from.clone());
-                function(range.clone(), range_full.clone());
-                function(range.clone(), range.clone());
-                function(range.clone(), range_to.clone());
-
-                function(range_to.clone(), range_from.clone());
-                function(range_to.clone(), range_full.clone());
-                function(range_to.clone(), range.clone());
-                function(range_to.clone(), range_to.clone());
+                Relation::from_intervals(interval_to, interval_from);
+                Relation::from_intervals(interval_to, interval_full);
+                Relation::from_intervals(interval_to, interval);
+                Relation::from_intervals(interval_to, interval_to);
             });
         })
     });

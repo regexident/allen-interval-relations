@@ -1,6 +1,21 @@
 use std::cmp::Ordering;
 
-use crate::{AtomicRelations, FromRanges, IntervalError};
+use crate::{
+    Bb, Be, Bounds, Eb, Ee, FromIntervals, Interval, IntervalBounds, IntervalError, IntervalFrom,
+    IntervalFull, IntervalTo, NonEmpty, TryFromIntervals,
+};
+
+mod contains;
+mod equals;
+mod finishes;
+mod meets;
+mod overlaps;
+mod precedes;
+mod starts;
+
+pub use self::{
+    contains::*, equals::*, finishes::*, meets::*, overlaps::*, precedes::*, starts::*,
+};
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 enum RelationOrder {
@@ -20,43 +35,6 @@ enum RelationOrder {
 }
 
 /// A type describing the possible relations between two intervals (e.g. `s` and `t`).
-///
-/// Each of Allen’s relations can be reduced to a boolean combination of
-/// a subset of atomic relations (see [AtomicRelations]) as follows:
-///
-/// - `PRECEDES(s,t)`:
-///   - ⇔ `{ EB1(s,t) }`
-/// - `IS_PRECEDED_BY(s,t)`:
-///   - ⇔ `{ BE−1 }`
-///   - ⇔ `¬(BE1(s,t) ∨ BE0(s,t))`
-/// - `MEETS(s,t)`
-///   - ⇔ `{ EB0(s,t) }`
-/// - `IS_MET_BY(s,t)`
-///   - ⇔ `{ BE0(s,t) }`
-/// - `FINISHES(s,t)`
-///   - ⇔ `{ EE0(s,t) ∧ BB−1(s,t) }`
-///   - ⇔ `{ EE0(s,t) ∧ ¬(BB0(s,t) ∨ BB1(s,t)) }`
-/// - `IS_FINISHED_BY(s,t)`
-///   - ⇔ `{ BB1(s,t) ∧ EE0(s,t) }`
-/// - `STARTS(s,t)`
-///   - ⇔ `{ BB0(s,t) ∧ EE1(s,t) }`
-/// - `IS_STARTED_BY(s,t)`
-///   - ⇔ `{ BB0(s,t) ∧ EE−1(s,t) }`
-///   - ⇔ `{ BB0(s,t) ∧ ¬(EE0(s,t) ∨ EE1(s,t)) }`
-/// - `CONTAINS(s,t)`
-///   - ⇔ `{ BB1(s,t) ∧ EE−1(s,t) }`
-///   - ⇔ `{ BB1(s,t) ∧ ¬(EE0(s,t) ∨ EE1(s,t)) }`
-/// - `IS_CONTAINED_BY(s,t)`
-///   - ⇔ `{ EE1(s,t) ∧ BB−1(s,t) }`
-///   - ⇔ `{ EE1(s,t) ∧ ¬(BB0(s,t) ∨ BB1(s,t)) }`
-/// - `EQUALS(s,t)`
-///   - ⇔ `{ BB0(s,t) ∧ EE0(s,t) }`
-/// - `OVERLAPS(s,t)`
-///   - ⇔ `{ BB1(s,t) ∧ EB−1(s,t) ∧ EE1(s,t) }`
-///   - ⇔ `{ (BB1(s,t) ∧ EE1(s,t)) ∧ ¬(EB0(s,t) ∨ EB1(s,t)) }`
-/// - `IS_OVERLAPPED_BY(s,t)`
-///   - ⇔ `{ BB−1(s,t) ∧ BE1(s,t) ∧ EE−1(s,t) }`
-///   - ⇔ `{ (BE1(s,t) ∧ ¬(BB0(s,t) ∨ BB1(s,t))) ∧ ¬(EE0(s,t) ∨ EE1(s,t)) }`
 ///
 /// The relations are comparable (via `Ord`) by the degree to which `s` begins before `t` and then within that by the degree to which `s` ends before `t`.
 ///
@@ -192,26 +170,48 @@ pub enum Relation {
     Equals,
 }
 
-impl Ord for Relation {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.order().cmp(&other.order())
-    }
-}
-
-impl PartialOrd for Relation {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl From<AtomicRelations> for Relation {
+impl Relation {
     #[inline]
-    fn from(atomics: AtomicRelations) -> Self {
+    fn from_bounds<T>(s: &Bounds<T>, t: &Bounds<T>) -> Self
+    where
+        T: Ord,
+    {
+        let bb = Bb::from_bounds(&s.start, &t.start);
+        let be = Be::from_bounds(&s.start, &t.end);
+        let eb = Eb::from_bounds(&s.end, &t.start);
+        let ee = Ee::from_bounds(&s.end, &t.end);
+
+        Self::from_atomic_relations(bb, be, eb, ee)
+    }
+
+    #[inline]
+    fn try_from_bounds<T>(s: &Bounds<T>, t: &Bounds<T>) -> Result<Self, IntervalError>
+    where
+        T: PartialOrd,
+    {
+        let bb = Bb::try_from_bounds(&s.start, &t.start)?;
+        let be = Be::try_from_bounds(&s.start, &t.end)?;
+        let eb = Eb::try_from_bounds(&s.end, &t.start)?;
+        let ee = Ee::try_from_bounds(&s.end, &t.end)?;
+
+        Ok(Self::from_atomic_relations(bb, be, eb, ee))
+    }
+
+    /// Each of Allen’s relations can be reduced to a boolean combination of
+    /// a combination of atomic relations.
+    /// By computing each of the atomic relations only once and only if needed,
+    /// we can decrease the overall runtime of the computation of Allen relations.
+    ///
+    /// See the following paper for more info:
+    ///
+    /// > Georgala, K., Sherif, M. A., & Ngonga Ngomo, A. C. (2016).
+    /// > An efficient approach for the generation of Allen relations.
+    /// > In ECAI 2016 (pp. 948-956). IOS Press.
+    #[inline]
+    fn from_atomic_relations(bb: Bb, be: Be, eb: Eb, ee: Ee) -> Self {
         use Ordering::*;
 
-        let AtomicRelations { bb, be, eb, ee } = atomics;
-
-        match (bb, be, eb, ee) {
+        match (bb.0, be.0, eb.0, ee.0) {
             // bf(s,t):
             // = { EB1(s,t) }
             (_, _, Less, _) => Self::Precedes { is_inverted: false },
@@ -260,18 +260,7 @@ impl From<AtomicRelations> for Relation {
             (Greater, Less, _, Greater) => Self::Overlaps { is_inverted: true },
         }
     }
-}
 
-impl<S, T> FromRanges<S, T> for Relation
-where
-    AtomicRelations: FromRanges<S, T>,
-{
-    fn from_ranges(s: S, t: T) -> Result<Self, IntervalError> {
-        AtomicRelations::from_ranges(s, t).map(Relation::from)
-    }
-}
-
-impl Relation {
     fn order(&self) -> RelationOrder {
         match self {
             Relation::Precedes { is_inverted: false } => RelationOrder::Precedes,
@@ -315,3 +304,95 @@ impl Relation {
         }
     }
 }
+
+impl Ord for Relation {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.order().cmp(&other.order())
+    }
+}
+
+impl PartialOrd for Relation {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl FromIntervals<IntervalFull, IntervalFull> for Relation {
+    #[inline]
+    fn from_intervals(s: &NonEmpty<IntervalFull>, t: &NonEmpty<IntervalFull>) -> Self {
+        assert_eq!(s, t);
+
+        let bb = Bb(Ordering::Equal);
+        let be = Be(Ordering::Less);
+        let eb = Eb(Ordering::Greater);
+        let ee = Ee(Ordering::Equal);
+
+        Self::from_atomic_relations(bb, be, eb, ee)
+    }
+}
+
+impl TryFromIntervals<IntervalFull, IntervalFull> for Relation {
+    #[inline]
+    fn try_from_intervals(
+        s: &NonEmpty<IntervalFull>,
+        t: &NonEmpty<IntervalFull>,
+    ) -> Result<Self, IntervalError> {
+        assert_eq!(s, t);
+
+        let bb = Bb(Ordering::Equal);
+        let be = Be(Ordering::Less);
+        let eb = Eb(Ordering::Greater);
+        let ee = Ee(Ordering::Equal);
+
+        Ok(Self::from_atomic_relations(bb, be, eb, ee))
+    }
+}
+
+macro_rules! from_intervals_impl {
+    ($s:ty, $t:ty) => {
+        impl<T> FromIntervals<$s, $t> for Relation
+        where
+            T: Ord + Copy,
+        {
+            fn from_intervals(s: &NonEmpty<$s>, t: &NonEmpty<$t>) -> Self {
+                Self::from_bounds(&s.0.bounds(), &t.0.bounds())
+            }
+        }
+
+        impl<T> TryFromIntervals<$s, $t> for Relation
+        where
+            T: PartialOrd + Copy,
+        {
+            fn try_from_intervals(
+                s: &NonEmpty<$s>,
+                t: &NonEmpty<$t>,
+            ) -> Result<Self, IntervalError> {
+                Self::try_from_bounds(&s.0.bounds(), &t.0.bounds())
+            }
+        }
+    };
+}
+
+from_intervals_impl!(IntervalFull, IntervalTo<T>);
+from_intervals_impl!(IntervalFull, IntervalFrom<T>);
+from_intervals_impl!(IntervalFull, Interval<T>);
+
+from_intervals_impl!(IntervalTo<T>, IntervalFull);
+from_intervals_impl!(IntervalTo<T>, IntervalTo<T>);
+from_intervals_impl!(IntervalTo<T>, IntervalFrom<T>);
+from_intervals_impl!(IntervalTo<T>, Interval<T>);
+
+from_intervals_impl!(IntervalFrom<T>, IntervalFull);
+from_intervals_impl!(IntervalFrom<T>, IntervalTo<T>);
+from_intervals_impl!(IntervalFrom<T>, IntervalFrom<T>);
+from_intervals_impl!(IntervalFrom<T>, Interval<T>);
+
+from_intervals_impl!(Interval<T>, IntervalFull);
+from_intervals_impl!(Interval<T>, IntervalTo<T>);
+from_intervals_impl!(Interval<T>, IntervalFrom<T>);
+from_intervals_impl!(Interval<T>, Interval<T>);
+
+#[cfg(test)]
+mod tests;
