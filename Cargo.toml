@@ -4,9 +4,7 @@ description = "An efficient implementation of Allen's interval relations for Rus
 repository = "https://github.com/regexident/allen-intervals"
 categories = ["date-and-time", "science"]
 keywords = [
-    "constraint",
-    "constraint-programming",
-    "time-span",
+    "constraints",
     "time-interval",
     "temporal-logic",
     "temporal-reasoning",
