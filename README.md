@@ -36,7 +36,7 @@ Allen's intervals support both, [discrete][time-domains] and [continuous][time-d
 > The number of measurements between any two time periods is finite.
 > Measurements are typically made at sequential integer values of the variable "time".
 
-If your time-values are represented using an integer type (e.g. `f32` or `f64`), then your time domain is most likely continuous.
+If your time-values are represented using an integer type (e.g. `i32` or `u32`), then your time domain is most likely discrete.
 
 > 💡 In discrete time domains Allen's intervals behave like as if they had exclusive end bounds
 > (similar to exclusive ranges: `..`, `..y`, `x..` and `x..y`).
