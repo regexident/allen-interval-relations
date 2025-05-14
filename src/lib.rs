@@ -56,7 +56,7 @@
 //! # Examples
 //!
 //! ```
-//! use allen_interval_relations::{Contains, FromIntervals, Interval, Meets, NonEmpty, Precedes, Relation};
+//! use allen_intervals::{Contains, FromIntervals, Interval, Meets, NonEmpty, Precedes, Relation};
 //!
 //! // Allen's interval algebra is only defined for non-empty intervals.
 //! // We thus need to wrap them in `NonEmpty<T>` first:
