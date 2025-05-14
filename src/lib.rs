@@ -1,4 +1,4 @@
-//! In 1983 James F. Allen published a paper in which he proposed [thirteen basic relations between time intervals][allen-interval-algebra]
+//! In 1983 James F. Allen published a paper in which he proposed [thirteen basic relations between time intervals][allen-interval-algebra],
 //! that are distinct, exhaustive, and qualitative:
 //!
 //! > Allen, J. F. (1983).
