@@ -1,5 +1,5 @@
 [package]
-name = "allen-interval-relations"
+name = "allen-intervals"
 version = "0.1.0"
 edition = "2021"
 categories = ["date-and-time", "science"]
@@ -15,7 +15,7 @@ keywords = [
 ]
 license = "MPL-2.0"
 readme = "README.md"
-repository = "https://github.com/regexident/allen-interval-relations"
+repository = "https://github.com/regexident/allen-intervals"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -1,9 +1,9 @@
-# allen-interval-relations
+# allen-intervals
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/regexident/allen-interval-relations/rust?label=build)](https://github.com/regexident/allen-interval-relations/actions/workflows/rust.yml)
-[![Downloads](https://img.shields.io/crates/d/allen-interval-relations.svg?style=flat-square)](https://crates.io/crates/allen-interval-relations/)
-[![Version](https://img.shields.io/crates/v/allen-interval-relations.svg?style=flat-square)](https://crates.io/crates/allen-interval-relations/)
-[![License](https://img.shields.io/crates/l/allen-interval-relations.svg?style=flat-square)](https://crates.io/crates/allen-interval-relations/)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/regexident/allen-intervals/rust?label=build)](https://github.com/regexident/allen-intervals/actions/workflows/rust.yml)
+[![Downloads](https://img.shields.io/crates/d/allen-intervals.svg?style=flat-square)](https://crates.io/crates/allen-intervals/)
+[![Version](https://img.shields.io/crates/v/allen-intervals.svg?style=flat-square)](https://crates.io/crates/allen-intervals/)
+[![License](https://img.shields.io/crates/l/allen-intervals.svg?style=flat-square)](https://crates.io/crates/allen-intervals/)
 
 ## Synopsis
 
