@@ -69,7 +69,7 @@ If your time-values are represented using a floating-point type (e.g. `f32` or `
 ### Examples
 
 ```rust
-use allen_interval_relations::{Contains, FromIntervals, Interval, Meets, NonEmpty, Precedes, Relation};
+use allen_intervals::{Contains, FromIntervals, Interval, Meets, NonEmpty, Precedes, Relation};
 
 // Allen's interval algebra is only defined for non-empty intervals.
 // We thus need to wrap them in `NonEmpty<T>` first:
